@@ -35,6 +35,9 @@ body{height:100%;overflow:hidden;background:#000;color:var(--label);
 button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
 button{background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:left;touch-action:manipulation}
 input,select,textarea{-webkit-tap-highlight-color:transparent}
+select{color-scheme:dark}
+select option,select optgroup{background-color:#2A2A2D;color:#fff}
+select option:checked{background-color:#0A84FF;color:#fff}
 :focus-visible{outline:2px solid var(--tint);outline-offset:2px;border-radius:8px}
 svg{display:block}
 .press{transition:transform .15s var(--ease),opacity .15s}
@@ -2234,7 +2237,7 @@ const _focusPill=focusPill;
 focusPill=function(){const base=_focusPill();if(POMO.end&&!base)return`<button class="pill live press" style="--c:${POMO.phase==='work'?'#FF453A':'#30D158'}" data-act="focus:open"><i></i>${phaseName(POMO.phase)} <span class="pomopill tabular">${fmtClock(pomoRem())}</span></button>`;return base};
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.2.1';
+const APP_VERSION='1.2.2';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
