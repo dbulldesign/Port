@@ -415,6 +415,9 @@ svg{display:block}
 
 .step{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--tint);color:#fff;font-size:12px;font-weight:700;margin-right:8px;vertical-align:2px}
 .syncdot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--label3);flex:none}
+.proj .pic{position:relative}
+.syncdot.gdot{position:absolute;right:1px;bottom:1px;width:8px;height:8px;box-shadow:0 0 0 2px #000}
+.syncdot.gdot.synced,.syncdot.gdot.syncing{display:none}
 .syncdot.synced{background:var(--green)}.syncdot.syncing{background:var(--orange)}.syncdot.error{background:var(--red)}.syncdot.offline,.syncdot.local{background:var(--label3)}
 .qr{display:inline-block;padding:10px;background:#fff;border-radius:14px;min-height:60px;color:#000;font-size:13px}
 .qr img,.qr canvas,.qr svg{display:block}
@@ -822,7 +825,7 @@ function mergeStates(L,R){
   return out;
 }
 async function gh(path,opts={}){
-  const r=await fetch('https://api.github.com'+path,{...opts,headers:{'Authorization':'Bearer '+secrets.token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(opts.body?{'Content-Type':'application/json'}:{}),...(opts.headers||{})}});
+  const r=await fetch('https://api.github.com'+path,{cache:'no-store',...opts,headers:{'Authorization':'Bearer '+secrets.token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(opts.body?{'Content-Type':'application/json'}:{}),...(opts.headers||{})}});
   return r;
 }
 async function connectSync(token){
@@ -867,7 +870,9 @@ async function runSync(){
   }catch(e){sync.error=(e&&e.message)||'Sync failed';dbStatus=navigator.onLine===false?'offline':'error'}
   sync.busy=false;renderStatus();if(sync.dirty)scheduleSync();
 }
-function renderStatus(){const el=$('.sync-status');if(el)el.innerHTML=syncStatusText();const dot=$('.syncdot');if(dot)dot.className='syncdot '+dbStatus}
+let lastSyncErr='';
+function renderStatus(){$$('.sync-status').forEach(el=>el.innerHTML=syncStatusText());$$('.syncdot').forEach(d=>d.className='syncdot '+dbStatus+(d.classList.contains('gdot')?' gdot':''));
+  if(dbStatus==='error'&&sync.error&&sync.error!==lastSyncErr){lastSyncErr=sync.error;toast('Sync problem: '+sync.error,{label:'Details',fn:()=>openSheet(syncSheet())})}if(dbStatus==='synced')lastSyncErr=''}
 function ago(t){if(!t)return'';const s=Math.round((Date.now()-t)/1000);return s<5?'just now':s<60?s+'s ago':s<3600?Math.round(s/60)+' min ago':Math.round(s/3600)+' h ago'}
 function syncStatusText(){
   if(!secrets.token||!sync.gistId)return'Not set up. This device only.';
@@ -875,11 +880,20 @@ function syncStatusText(){
   if(dbStatus==='error')return'Sync problem: '+esc(sync.error);
   return`Connected as @${esc(sync.login||'GitHub')}${sync.lastAt?', synced '+ago(sync.lastAt):''}`;
 }
+const isIOS=()=>/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+/* a setup link (…#setup=xyz) or a bare token, as typed or pasted */
+function tokenFrom(text){text=String(text||'').trim();const m=text.match(/#setup=([A-Za-z0-9_\-]+)/);if(!m)return text;
+  try{const j=JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,'+').replace(/_/g,'/')))));return j.t||''}catch(e){return''}}
+function handleSetupHash(){
+  if(!/^#setup=/.test(location.hash))return false;const tok=tokenFrom(location.hash);history.replaceState(null,'',location.pathname+location.search);
+  if(!tok){toast('That setup link looks incomplete. Copy it again.');return true}
+  toast('Connecting sync…');
+  connectSync(tok).then(()=>{renderApp();refreshSheet();toast('Sync connected as @'+sync.login);
+    if(isIOS()&&!isStandaloneApp())setTimeout(()=>toast('Connected in Safari. If you use Port from the Home Screen, paste the link in its Settings → Sync too.'),2600)}).catch(e=>toast(e.message));
+  return true}
 function initDb(){
-  const m=location.hash.match(/^#setup=([A-Za-z0-9_\-]+)/);
-  if(m){try{const j=JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,'+').replace(/_/g,'/')))));history.replaceState(null,'',location.pathname+location.search);
-      if(j.t){connectSync(j.t).then(()=>{toast('Sync connected as @'+sync.login);renderApp()}).catch(e=>toast(e.message))}}catch(e){}}
-  else if(secrets.token&&sync.gistId)runSync();
+  if(!handleSetupHash()&&secrets.token&&sync.gistId)runSync();
+  window.addEventListener('hashchange',handleSetupHash);
   setInterval(()=>{if(!document.hidden)runSync()},20000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)runSync()});
   window.addEventListener('online',()=>runSync());window.addEventListener('focus',()=>runSync());
@@ -896,10 +910,10 @@ function syncSheet(){return()=>{
   return`${snav('Sync',{act:'sheet:close',label:'Close'})}<div class="sbody">
     <div class="card"><div class="frow" style="display:block"><div style="display:flex;align-items:center;gap:8px"><span class="syncdot ${dbStatus}"></span><b>Sync across devices</b></div><div class="sync-status" style="color:var(--label2);font-size:14px;margin-top:4px">${syncStatusText()}</div></div>
     ${on?`<div class="frow" style="gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="sync:now">Sync now</button><button class="btn sm primary" data-act="sync:share">Add another device</button><button class="btn sm danger" data-act="sync:disconnect" style="margin-left:auto">Disconnect</button></div>`:''}</div>
-    ${on&&sync.share?`<div class="card" style="margin-top:14px;text-align:center;padding:16px"><div style="font-size:15px;margin-bottom:10px">Scan this with the other device’s camera, or send yourself the link.</div><div id="qr" class="qr"></div><div class="fnote" style="padding:12px 0 8px;word-break:break-all;font-size:11px;color:var(--label3)">${esc(setupLink())}</div><button class="btn sm" data-act="sync:copy">Copy link</button><div class="fnote" style="padding:10px 0 0">The link contains your sync token: anyone who opens it can see and edit your plan. Share it only with yourself.</div></div>`:''}
+    ${on&&sync.share?`<div class="card" style="margin-top:14px;text-align:center;padding:16px"><div style="font-size:15px;margin-bottom:10px">Scan this with the other device’s camera, or send yourself the link.</div><div class="fnote" style="padding:0 0 12px;text-align:left"><b>iPhone and iPad:</b> the camera opens the link in Safari, which keeps its own separate copy from the Home Screen app. If you use Port from the Home Screen, copy the link instead, open Port from the Home Screen, go to Settings → Sync and paste it into the box.</div><div id="qr" class="qr"></div><div class="fnote" style="padding:12px 0 8px;word-break:break-all;font-size:11px;color:var(--label3)">${esc(setupLink())}</div><button class="btn sm" data-act="sync:copy">Copy link</button><div class="fnote" style="padding:10px 0 0">The link contains your sync token: anyone who opens it can see and edit your plan. Share it only with yourself.</div></div>`:''}
     ${on?'':`<div class="card" style="margin-top:14px">
       <div class="frow" style="display:block"><div class="step">1</div><b>Create a GitHub token</b><div class="fnote" style="padding:4px 0 10px">A free GitHub account is all you need. On the page that opens, tick only <b>gist</b>, set expiration to <b>No expiration</b>, then Generate and copy the token.</div><a class="btn sm" href="${TOKEN_URL}" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none">Open GitHub</a></div>
-      <form class="frow" data-act="sync:connect" style="display:block"><div class="step">2</div><b>Paste it here</b><div style="display:flex;gap:8px;margin-top:10px"><input name="token" class="input" placeholder="ghp_…" autocomplete="off" autocapitalize="off" spellcheck="false" style="flex:1;min-width:0;background:var(--fill);border:0;border-radius:10px;padding:10px 12px;font-size:16px;outline:none"><button type="submit" class="btn sm primary" id="syncConnectBtn">Connect</button></div><div class="fnote" id="syncErr" style="padding:8px 0 0;color:var(--red)"></div></form>
+      <form class="frow" data-act="sync:connect" style="display:block"><div class="step">2</div><b>Paste it here</b><div class="fnote" style="padding:4px 0 0">Already set up on another device? Paste its setup link here instead.</div><div style="display:flex;gap:8px;margin-top:10px"><input name="token" class="input" placeholder="Token (ghp_…) or setup link" autocomplete="off" autocapitalize="off" spellcheck="false" style="flex:1;min-width:0;background:var(--fill);border:0;border-radius:10px;padding:10px 12px;font-size:16px;outline:none"><button type="submit" class="btn sm primary" id="syncConnectBtn">Connect</button></div><div class="fnote" id="syncErr" style="padding:8px 0 0;color:var(--red)"></div></form>
       <div class="frow" style="display:block"><div class="step">3</div><b>Other devices</b><div class="fnote" style="padding:4px 0 0">Come back here and tap “Add another device” to get a QR code. Scanning it sets that device up in one go.</div></div></div>`}
     <div class="fnote" style="padding-top:14px">Your plan is saved in a private file in your GitHub account (a gist named ${GIST_FILE}). Every device keeps a full copy and works offline; changes merge when they reconnect.</div>
   </div>`;
@@ -1161,7 +1175,7 @@ function projbar(){
   return`<div class="projbar">${item('inbox','Inbox','inbox','#0A84FF')}${ps.map(p=>item(p.id,p.name,p.icon||'tag',p.color)).join('')}
     <button class="proj add press" data-act="project:new" aria-label="New project"><span class="pic">${I.plus}</span></button>
     <button class="proj tool press" data-act="cmd:open" aria-label="Search">${'<span class="pic">'+ico('search',2.2)+'</span>'}</button>
-    <button class="proj gear press" data-act="settings:open" aria-label="Settings"><span class="pic">${I.gear}</span></button></div>`;
+    <button class="proj gear press" data-act="settings:open" aria-label="Settings"><span class="pic">${I.gear}${secrets.token&&sync.gistId?`<span class="syncdot ${dbStatus} gdot"></span>`:''}</span></button></div>`;
 }
 
 /* ---- focus ---- */
@@ -1450,7 +1464,7 @@ function handle(act,el,e){
     case'noop':break;
     case'sync:open':openSheet(syncSheet());break;
     case'sync:connect':{const inp=el.querySelector('input[name=token]');const btn=$('#syncConnectBtn');const err=$('#syncErr');if(btn){btn.disabled=true;btn.textContent='Connecting…'}
-      connectSync(inp.value).then(()=>{haptic(10);refreshSheet();renderApp();toast('Sync connected as @'+sync.login)}).catch(e=>{if(err)err.textContent=e.message;if(btn){btn.disabled=false;btn.textContent='Connect'}});break}
+      connectSync(tokenFrom(inp.value)).then(()=>{haptic(10);refreshSheet();renderApp();toast('Sync connected as @'+sync.login)}).catch(e=>{if(err)err.textContent=e.message;if(btn){btn.disabled=false;btn.textContent='Connect'}});break}
     case'sync:now':runSync();break;
     case'sync:share':sync.share=!sync.share;refreshSheet();break;
     case'sync:copy':(navigator.clipboard?navigator.clipboard.writeText(setupLink()).then(()=>toast('Link copied')):Promise.reject()).catch(()=>toast('Couldn’t copy. Select the link text instead.'));break;
@@ -2116,7 +2130,7 @@ function cmdActions(){const t=todayYmd();return[
   ['Smart schedule today','bolt','s',()=>{SP=smartPlan(t,{fill:false});if(!SP.blocks.length&&SP.canFill)SP=smartPlan(t,{fill:true});openSheet(smartSheet)}],
   ['Focus','timer','f',()=>handle('focus:open',document.body)],['Go to today','calendar','t',()=>setDate(t,t>ui.date?'next':'prev')],
   ['Week review','star','',()=>openSheet(weekReviewSheet())],['Archived to dos','archive','',()=>openSheet(archiveSheet)],['Calendars','calendar','',()=>openSheet(calSheet)],
-  ['Keyboard shortcuts','keyboard','?',()=>openSheet(keysSheet)],['Check for updates','bolt','',()=>checkUpdate(true)],['Settings','tag','',()=>openSheet(settingsSheet())]]}
+  ['Keyboard shortcuts','keyboard','?',()=>openSheet(keysSheet)],['Check for updates','bolt','',()=>checkUpdate(true)],['Sync now','bolt','',()=>{if(!secrets.token||!sync.gistId){openSheet(syncSheet());return}toast('Syncing…');runSync().then(()=>toast(dbStatus==='synced'?'Synced':'Sync problem: '+sync.error))}],['Settings','tag','',()=>openSheet(settingsSheet())]]}
 function cmdItems(){const q=CMD.q.trim().toLowerCase();const out=[];
   const words=q.split(/\s+/).filter(Boolean);const tagQ=words.filter(w=>w[0]==='#').map(w=>w.slice(1));const txt=words.filter(w=>w[0]!=='#');
   const hit=s=>txt.every(w=>s.includes(w));
@@ -2341,7 +2355,7 @@ function projSidebar(){
       <div class="plabel">Projects <span>${ps.length||''}</span></div>
       ${ps.map(p=>item(p.id,p.name,p.icon||'tag',p.color)).join('')||'<div class="pnone">No projects yet.</div>'}
       <div class="pnone" id="pnomatch" hidden>No project matches.</div></div>
-    <div class="sfoot"><button class="sbtn press" data-act="project:new">${I.plus}<span>New project</span></button><button class="sbtn icon press" data-act="cmd:open" aria-label="Search">${ico('search',2.2)}</button><button class="sbtn icon press" data-act="settings:open" aria-label="Settings">${I.gear}</button></div></nav>`}
+    <div class="sfoot"><button class="sbtn press" data-act="project:new">${I.plus}<span>New project</span></button><button class="sbtn icon press" data-act="cmd:open" aria-label="Search">${ico('search',2.2)}</button><button class="sbtn icon press" data-act="settings:open" aria-label="Settings" style="position:relative">${I.gear}${secrets.token&&sync.gistId?`<span class="syncdot ${dbStatus} gdot"></span>`:''}</button></div></nav>`}
 function panelTitle(){const p=currentProject();const n=tasksArr().filter(t=>!t.done&&(p?t.projectId===p.id:!t.projectId)).length;
   return`<div class="ptitle" style="--c:${p?p.color:'#0A84FF'}"><span class="pic">${ico(p?(p.icon||'tag'):'inbox',2.2)}</span><h1>${esc(p?p.name:'Inbox')}</h1><span class="cnt">${n||''}</span>${p?`<button class="more press" data-act="project:edit" data-id="${p.id}" aria-label="Edit project">Edit</button>`:''}</div>`}
 function filterSidebar(){const q=ui.projFilter.trim().toLowerCase();let shown=0;
@@ -2353,7 +2367,7 @@ document.addEventListener('keydown',e=>{if(!e.target.matches||!e.target.matches(
   if(e.key==='Escape'){ui.projFilter='';e.target.value='';filterSidebar();e.target.blur()}});
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.3.0';
+const APP_VERSION='1.3.1';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);

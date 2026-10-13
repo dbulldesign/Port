@@ -1,4 +1,4 @@
 {
-  "version": "1.3.0",
-  "notes": "Project sidebar on desktop with search, icons guessed from project names"
+  "version": "1.3.1",
+  "notes": "Sync fixes: setup links work in an open app, paste a setup link, visible sync problems"
 }
