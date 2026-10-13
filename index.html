@@ -1237,6 +1237,7 @@ function listMenu(){return()=>{const p=currentProject();
     ${p?`<button class="btn" data-act="project:edit" data-id="${p.id}">Edit project</button>`:''}
     <button class="btn" data-act="done:toggle">${ui.showDone?'Hide':'Show'} completed</button>
     <button class="btn" data-act="done:clearHere">Clear completed here</button>
+    <button class="btn" data-act="upd:check">Check for updates <span style="color:var(--label3);font-weight:500">· v${APP_VERSION}</span></button>
     ${p?`<button class="btn danger" data-act="project:delete" data-id="${p.id}">Delete project</button>`:''}</div></div>`}}
 
 /* ============ actions ============ */
@@ -2026,7 +2027,7 @@ function cmdActions(){const t=todayYmd();return[
   ['Smart schedule today','bolt','s',()=>{SP=smartPlan(t,{fill:false});if(!SP.blocks.length&&SP.canFill)SP=smartPlan(t,{fill:true});openSheet(smartSheet)}],
   ['Focus','timer','f',()=>handle('focus:open',document.body)],['Go to today','calendar','t',()=>setDate(t,t>ui.date?'next':'prev')],
   ['Week review','star','',()=>openSheet(weekReviewSheet())],['Archived to dos','archive','',()=>openSheet(archiveSheet)],['Calendars','calendar','',()=>openSheet(calSheet)],
-  ['Keyboard shortcuts','keyboard','?',()=>openSheet(keysSheet)],['Settings','tag','',()=>openSheet(settingsSheet())]]}
+  ['Keyboard shortcuts','keyboard','?',()=>openSheet(keysSheet)],['Check for updates','bolt','',()=>checkUpdate(true)],['Settings','tag','',()=>openSheet(settingsSheet())]]}
 function cmdItems(){const q=CMD.q.trim().toLowerCase();const out=[];
   const words=q.split(/\s+/).filter(Boolean);const tagQ=words.filter(w=>w[0]==='#').map(w=>w.slice(1));const txt=words.filter(w=>w[0]!=='#');
   const hit=s=>txt.every(w=>s.includes(w));
@@ -2233,7 +2234,7 @@ const _focusPill=focusPill;
 focusPill=function(){const base=_focusPill();if(POMO.end&&!base)return`<button class="pill live press" style="--c:${POMO.phase==='work'?'#FF453A':'#30D158'}" data-act="focus:open"><i></i>${phaseName(POMO.phase)} <span class="pomopill tabular">${fmtClock(pomoRem())}</span></button>`;return base};
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.2.0';
+const APP_VERSION='1.2.1';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
@@ -2252,8 +2253,8 @@ function refreshVersion(){
 }
 function versionCard(){
   const st=UPD.checking?'Checking for updates…':UPD.err?esc(UPD.err):hasUpdate()?`Version ${esc(UPD.latest)} is available${UPD.notes?': '+esc(UPD.notes):''}`:UPD.at?`Up to date, checked ${ago(UPD.at)}`:'Checks automatically while the app is open';
-  return`<div class="card verrow" id="vercard"><div class="frow"><label style="min-width:0;flex:1">Port <b>v${APP_VERSION}</b>${hasUpdate()?`<span class="vertag new">v${esc(UPD.latest)} ready</span>`:''}<small style="display:block;font-size:13px;color:var(--label2)">${st}</small></label>
-    ${hasUpdate()?`<button class="btn sm primary" data-act="upd:apply">Update</button>`:`<button class="btn sm" data-act="upd:check" ${UPD.checking?'disabled':''}>Check</button>`}</div></div>`;
+  return`<div class="card verrow" id="vercard"><div class="frow"><label style="min-width:0;flex:1">Port <b>v${APP_VERSION}</b>${hasUpdate()?`<span class="vertag new">v${esc(UPD.latest)} ready</span>`:''}<small style="display:block;font-size:13px;color:var(--label2)">${st}</small></label></div>
+    ${hasUpdate()?`<button class="frow" data-act="upd:apply" style="width:100%;justify-content:center;color:var(--tint);font-weight:600">Update to v${esc(UPD.latest)}</button>`:`<button class="frow" data-act="upd:check" style="width:100%;justify-content:center;color:var(--tint);font-weight:500" ${UPD.checking?'disabled':''}>${UPD.checking?'Checking…':'Check for updates'}</button>`}</div>`;
 }
 async function applyUpdate(){
   toast('Updating…');
