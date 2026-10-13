@@ -38,6 +38,40 @@ Everything runs on the device:
 
 Preferences (focus hours, buffer, breaks, lunch) are in Settings → Scheduling.
 
+## Daily flow
+
+- **Plan your day** (banner each morning, or `p`): review what slipped, pick from the backlog, size each to do, set an intention, then smart-schedule it.
+- **Shut down** (banner after 4pm): see what got done, move what's left, write a line about the day.
+- **Week review** (Week → Review): done counts, estimated vs logged time per project, and how each weekly objective moved. Link a to do to an objective from its details.
+- **Done ring and streak**: the ring next to List/Day/Week fills as you finish today's to dos; the number after it is your streak of days with something done.
+
+## More features
+
+- **Steps**: break a to do into a checklist from its details; the row shows progress like "2/5".
+- **Tags**: type `#deep` or `#calls` in a to do. Filter by tag above the list, or search `#deep`.
+- **Search and commands**: the magnifier in the project bar, `/` or `⌘K`/`Ctrl+K`. Find any to do, block or project, run actions, or add a to do or block straight from what you typed.
+- **Keyboard shortcuts** (PC, Mac, iPad with keyboard): press `?` for the list. `n` new to do, `t` today, `←`/`→` days, `1`/`2`/`3` List/Day/Week, `p` plan, `s` schedule, `f` focus, `space` start/stop the timer, `e` edit and `x` complete the to do under the mouse.
+- **Focus timer**: in Focus, switch to "Focus timer" for Pomodoro rounds (25/5 with a long break every 4th; change lengths in Settings). A soft chime plays at the end of each round.
+- **Archive**: completed to dos move to the archive after 7 days (Settings → Archive). They still count in reviews and your streak, and can be restored.
+- **Calendars**: Settings → Calendars shows Google, Outlook or iCloud events as striped, read-only blocks, and smart scheduling plans around them. Many calendar services block web apps from reading their links; if yours shows an error, import the `.ics` file instead, or set up the proxy below.
+
+### Calendar proxy (optional)
+
+Create a free Cloudflare Worker (dash.cloudflare.com → Workers → Create) with this code, deploy it, and paste `https://YOUR-WORKER.workers.dev/?url=` into Settings → Calendars → Proxy:
+
+```js
+export default {
+  async fetch(req) {
+    const url = new URL(req.url).searchParams.get('url');
+    if (!url || !/^https:\/\//.test(url)) return new Response('Missing url', { status: 400 });
+    const r = await fetch(url, { headers: { 'User-Agent': 'Port' } });
+    return new Response(r.body, { status: r.status, headers: { 'Content-Type': 'text/calendar; charset=utf-8', 'Access-Control-Allow-Origin': '*' } });
+  }
+};
+```
+
+All animations switch off automatically when the device has **Reduce Motion** turned on.
+
 ## Coming from Harbor?
 
 Upload these files over the old ones. Your plan, settings and sync carry over by themselves: each device moves its saved data across the first time it opens, and the sync file in your gist is renamed from `harbor-sync.json` to `port-sync.json` on the next sync.
