@@ -469,6 +469,39 @@ svg{display:block}
   .task .inner{cursor:pointer}
   .focusview{left:420px}
 }
+@media (min-width:1100px){
+  .sidebar{width:232px;flex:none;display:flex;flex-direction:column;background:#0B0B0C;border-right:.5px solid var(--sep);min-height:0}
+  .sfind{display:flex;align-items:center;gap:8px;margin:14px 12px 8px;padding:8px 10px;border-radius:10px;background:var(--fill2)}
+  .sfind svg{width:15px;height:15px;color:var(--label3);flex:none}
+  .sfind input{flex:1;min-width:0;background:none;border:0;outline:none;font-size:14px;padding:0}
+  .plist{flex:1;min-height:0;overflow:auto;padding:2px 8px 10px;scrollbar-width:thin}
+  .plist .proj{width:100%;font-size:15px;font-weight:500;letter-spacing:0;gap:10px;padding:6px 8px;border-radius:10px;color:var(--label2);transition:background .15s,color .15s}
+  .plist .proj:hover{background:var(--fill2);color:var(--label)}
+  .plist .proj.on{background:color-mix(in srgb,var(--c) 20%,transparent);color:var(--label)}
+  .plist .proj .pic{width:26px;height:26px;background:color-mix(in srgb,var(--c) 85%,#000);color:#fff}
+  .plist .proj.on .pic{transform:none}
+  .plist .proj .pic svg{width:14px;height:14px}
+  .plist .proj .pn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+  .plist .proj .cnt{font-size:12.5px;margin:0;align-self:center;color:var(--label3)}
+  .plist .proj.drop{background:color-mix(in srgb,var(--tint) 22%,transparent);color:var(--label)}
+  .plist .proj.drop .pic{transform:scale(1.15);box-shadow:none}
+  .plist .proj[hidden]{display:none}
+  .plabel{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--label3);text-transform:uppercase;letter-spacing:.4px;padding:14px 8px 6px}
+  .pnone{font-size:13px;color:var(--label3);padding:6px 8px}
+  .pnone[hidden]{display:none}
+  .sfoot{display:flex;gap:6px;padding:8px 10px 12px;border-top:.5px solid var(--sep)}
+  .sbtn{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;font-size:14px;font-weight:500;color:var(--label2);flex:1}
+  .sbtn:hover{background:var(--fill2);color:var(--label)}
+  .sbtn.icon{flex:none}
+  .sbtn svg{width:16px;height:16px}
+  .screen.side .focusview{left:652px}
+  .ptitle{display:flex;align-items:center;gap:12px;padding:16px 22px 4px;min-width:0}
+  .ptitle .pic{width:34px;height:34px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center;flex:none;animation:scalein .35s var(--spring)}
+  .ptitle .pic svg{width:17px;height:17px}
+  .ptitle h1{font-size:26px;font-weight:700;letter-spacing:-.6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .ptitle .cnt{font-size:15px;color:var(--label3);font-weight:500;align-self:flex-end;margin-bottom:4px}
+  .ptitle .more{margin-left:auto;color:var(--tint);font-size:14px;font-weight:500}
+}
 
 /* ---- more: animations ---- */
 @keyframes slideout{to{transform:translateX(42px);opacity:0}}
@@ -673,7 +706,54 @@ const PI={
   sun:'<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/>',
   tag:'<path d="M3 11V4h7l10 10-7 7z"/><circle cx="7.5" cy="8.5" r="1.3"/>',
 };
+Object.assign(PI,{
+  food:'<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 21V3c-2.2 0-3.5 2.5-3.5 6v4H17"/>',
+  car:'<path d="M4 16.5V12l2.2-5.2A1.5 1.5 0 0 1 7.6 6h8.8a1.5 1.5 0 0 1 1.4.8L20 12v4.5z"/><path d="M4 12h16"/><circle cx="7.5" cy="16.5" r="1.8"/><circle cx="16.5" cy="16.5" r="1.8"/>',
+  wrench:'<path d="M14.5 4.2a5 5 0 0 0 5.3 5.3l-2.3-2.3-1.2-3zM19.8 9.5a5 5 0 0 1-6.3 3L6.6 19.4a2.1 2.1 0 0 1-3-3l6.9-6.9a5 5 0 0 1 4-5.3l2.5 2.6z"/>',
+  paw:'<circle cx="6" cy="10" r="1.8"/><circle cx="9.5" cy="5.8" r="1.8"/><circle cx="14.5" cy="5.8" r="1.8"/><circle cx="18" cy="10" r="1.8"/><path d="M12 11.5c-3 0-5.5 4-5.5 6.2 0 1.6 1.3 2.3 2.8 2.3 1.2 0 1.8-.6 2.7-.6s1.5.6 2.7.6c1.5 0 2.8-.7 2.8-2.3 0-2.2-2.5-6.2-5.5-6.2z"/>',
+  gift:'<rect x="3.5" y="8.5" width="17" height="4" rx="1"/><path d="M5 12.5V20h14v-7.5M12 8.5V20M12 8.5C10.5 5 7 4.5 7 6.8c0 1.7 5 1.7 5 1.7zM12 8.5c1.5-3.5 5-4 5-1.7 0 1.7-5 1.7-5 1.7z"/>',
+  camera:'<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.3l1.5-2h5.4l1.5 2h2.3A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.5"/>',
+  code:'<path d="m8 7-5 5 5 5M16 7l5 5-5 5M13.5 4.5l-3 15"/>',
+  users:'<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.5 14.7c.5-.1 1-.2 1.5-.2 2.3 0 4 1.6 4 4.3"/>',
+});
 const ICON_KEYS=Object.keys(PI);
+/* guess a project icon from its name: the first word that means something wins */
+const ICON_WORDS={
+  food:'restaurant tavern bistro diner kitchen food cook recipe meal dinner lunch breakfast brunch grill pizza burger bakery bake bar pub bbq sushi taco cater chef eat menu steak dine dining brewer wine winery',
+  cup:'coffee cafe café tea espresso latte',
+  cart:'shop store grocer errand amazon purchase market mall retail buy order',
+  leaf:'garden plant green park nature farm flower tree yard lawn eco botanic forest outdoor hike camp',
+  house:'home house apartment flat chore clean rent moving renovat reno household property cottage cabin',
+  heart:'health doctor medical dentist love wedding date dating relationship wellness therapy care hospital clinic',
+  book:'read book library novel journal reading notes',
+  dumbbell:'gym fitness workout exercise training yoga sport lift crossfit pilates swim cycling bike marathon run running tennis golf soccer football',
+  laptop:'computer laptop tech software app website web digital online email admin',
+  code:'code coding dev develop programming engineer github api bug backend frontend',
+  phone:'call phone mobile contact',
+  music:'music band song guitar piano concert gig album choir dj',
+  pencil:'write writing blog draft essay design sketch draw content article edit',
+  cap:'school class course study university college homework exam learn lesson education degree thesis teach',
+  coin:'money finance budget bank tax taxes invoice bill pay invest account expense salary saving crypto insurance',
+  plane:'travel trip vacation holiday flight airport abroad tour journey honeymoon',
+  bolt:'energy power electric light lighting launch startup sprint',
+  chat:'chat meeting meet talk social community network interview discuss feedback support message slack',
+  flag:'project milestone campaign event race mission objective',
+  bell:'reminder remind alert deadline appointment',
+  moon:'night evening sleep bed rest meditat relax',
+  sun:'morning summer beach sunny weekend',
+  briefcase:'work job office business client company career corporate consult boss firm agency',
+  car:'car drive auto vehicle garage mechanic commute road parking',
+  wrench:'fix repair maintenance tool diy build plumbing handyman setup install workshop',
+  paw:'dog cat pet vet puppy kitten animal horse',
+  gift:'gift birthday christmas xmas present party anniversary celebration',
+  camera:'photo photography camera video film youtube shoot instagram movie',
+  users:'family kid kids friend team people hiring recruit group club volunteer church parent baby child',
+};
+const ICON_INDEX=Object.entries(ICON_WORDS).flatMap(([k,w])=>w.split(' ').map(x=>[x,k]));
+function guessIcon(name){
+  for(const tok of String(name||'').toLowerCase().split(/[^a-zà-ÿ]+/).filter(Boolean)){
+    for(const [w,k] of ICON_INDEX){if(tok===w||(w.length>=4&&tok.startsWith(w))||(tok.length>=4&&tok.endsWith('s')&&tok.slice(0,-1)===w))return k}}
+  return null}
 const ico=(k,sw=1.9)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${PI[k]||PI.tag}</svg>`;
 const I={
   today:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><rect x="7" y="12.5" width="5" height="4" rx="1.2" fill="currentColor" stroke="none"/></svg>',
@@ -844,7 +924,7 @@ function findOrCreateProject(name){
   const found=Object.values(state.projects).find(p=>p.name.toLowerCase()===lower);
   if(found)return found;
   const color=pickProjectColor();
-  const id=uid('p');const p={id,name,color,icon:pickProjectIcon(),createdAt:Date.now()};put('projects',id,p);return p;
+  const id=uid('p');const p={id,name,color,icon:guessIcon(name)||pickProjectIcon(),createdAt:Date.now()};put('projects',id,p);return p;
 }
 function currentBlock(){
   const n=nowMin();const todays=blocksOn(todayYmd()).filter(b=>b.start<=n&&n<blockEnd(b));
@@ -951,11 +1031,12 @@ function renderApp(){
   const app=$('#app');
   const tl=$('.timeline');const sc=tl?{t:tl.scrollTop,l:tl.scrollLeft}:null;
   const td=$('.todo-card');const tds=td?td.scrollTop:0;
-  const pb=$('.projbar');const pbs=pb?pb.scrollLeft:null;
+  const pb=$('.projbar');const pbs=pb?pb.scrollLeft:null;const pl=$('.plist');const pls=pl?pl.scrollTop:null;
   app.innerHTML=isWide()?wideShell():mobileShell();
   const tl2=$('.timeline');
   if(tl2){if(sc&&ui.scrolledToNow){tl2.scrollTop=sc.t;tl2.scrollLeft=sc.l}else scrollToNow()}
   const td2=$('.todo-card');if(td2&&tds)td2.scrollTop=tds;
+  const pl2=$('.plist');if(pl2){if(pls!=null)pl2.scrollTop=pls;filterSidebar();const on=$('.proj.on',pl2);if(on&&ui.listAnim){const r=on.getBoundingClientRect(),pr=pl2.getBoundingClientRect();if(r.top<pr.top||r.bottom>pr.bottom)on.scrollIntoView({block:'nearest',behavior:'smooth'})}}
   const pb2=$('.projbar');if(pb2){if(pbs!=null)pb2.scrollLeft=pbs;const on=$('.proj.on',pb2);if(on&&ui.listAnim){const r=on.getBoundingClientRect(),pr=pb2.getBoundingClientRect();if(r.left<pr.left+10||r.right>pr.right-10)pb2.scrollTo({left:on.offsetLeft-20,behavior:'smooth'})}}
   ui.listAnim=false;ui.dayAnim='';ui.freshBlock=null;ui.freshBlocks=[];
   afterRender();
@@ -974,8 +1055,10 @@ function mobileShell(){
     <div class="desk"><div class="todo-card" style="--c:${projColor()}">${todoHtml()}</div>${projbar()}</div>
     ${ui.focus?focusHtml():''}</div>`;
 }
+const hasSidebar=()=>window.matchMedia('(min-width:1100px)').matches;
 function wideShell(){
-  return`<div class="screen ${ui.mode==='week'?'week':''}"><aside class="panel">${projbar()}<div class="desk"><div class="todo-card" style="--c:${projColor()}">${todoHtml()}</div></div></aside>
+  const side=hasSidebar();
+  return`<div class="screen ${ui.mode==='week'?'week':''} ${side?'side':''}">${side?projSidebar():''}<aside class="panel">${side?panelTitle():projbar()}<div class="desk"><div class="todo-card" style="--c:${projColor()}">${todoHtml()}</div></div></aside>
     <section class="mainwrap"><div class="cal"><div class="datehead">${dateheadWide()}</div><div class="timeline">${timelineHtml()}</div></div></section>${ui.focus?focusHtml():''}</div>`;
 }
 function dateheadMobile(){
@@ -1184,7 +1267,7 @@ function projectSheet(id){const fresh=pickProjectColor(),freshIcon=pickProjectIc
   const p=id?state.projects[id]:null;
   const color=p?p.color:fresh;const icon=p?(p.icon||'tag'):freshIcon;
   return`${snav(p?'Edit Project':'New Project',{act:'sheet:close',label:'Cancel'},{act:'noop',label:p?'Save':'Add',form:'projForm'})}
-  <div class="sbody"><form id="projForm" data-act="project:save" data-id="${id||''}">
+  <div class="sbody"><form id="projForm" data-act="project:save" data-id="${id||''}" data-fresh-icon="${freshIcon}">
     <div class="card"><div class="frow big"><input name="name" value="${p?esc(p.name):''}" placeholder="Project name" required ${p?'':'autofocus'} autocomplete="off" aria-label="Name"></div></div>
     <div class="fnote" style="padding-top:14px">Colour</div><div class="card" style="margin-top:6px"><div class="swatches">${PALETTE.map(c=>`<button type="button" class="swatch ${color===c?'on':''}" style="background:${c};${cvars(c)}" data-act="chip:set" data-name="color" data-value="${c}" aria-label="Colour"></button>`).join('')}</div><input type="hidden" name="color" value="${color}"></div>
     <div class="fnote" style="padding-top:14px">Icon</div><div class="card" style="margin-top:6px">${iconGrid(icon,color,'icon',false)}</div>
@@ -2062,7 +2145,7 @@ let HOV=null;
 document.addEventListener('mouseover',e=>{const t=e.target.closest&&e.target.closest('.task[data-task]');HOV=t?t.dataset.task:null},{passive:true});
 function shortcutNew(){if(ui.mode==='list')ui.adding={kind:'project'};else ui.adding={kind:'day',date:ui.date};ui.newUrg=0;ui.newDue=null;renderApp()}
 function timerTarget(){const run=timerTask();if(run)return run.id;if(HOV&&state.tasks[HOV]&&!state.tasks[HOV].done)return HOV;const b=focusBlock();const inB=b&&tasksIn(b.id).find(t=>!t.done);if(inB)return inB.id;const td=sortTasks(tasksForDay(todayYmd()).filter(t=>!t.done))[0];return td?td.id:null}
-const KEYS=[['⌘K or /','Search and commands'],['n','New to do'],['t','Go to today'],['← →','Previous / next day'],['1 2 3','List, Day, Week'],['p','Plan the day'],['s','Smart schedule'],['f','Focus'],['space','Start / stop the timer on the hovered or next to do'],['e','Edit the hovered to do'],['x','Complete the hovered to do'],['esc','Close'],['?','This list']];
+const KEYS=[['⌘K or /','Search and commands'],['g','Find a project (wide screens)'],['n','New to do'],['t','Go to today'],['← →','Previous / next day'],['1 2 3','List, Day, Week'],['p','Plan the day'],['s','Smart schedule'],['f','Focus'],['space','Start / stop the timer on the hovered or next to do'],['e','Edit the hovered to do'],['x','Complete the hovered to do'],['esc','Close'],['?','This list']];
 function keysSheet(){return`${snav('Keyboard shortcuts',null,{act:'sheet:close',label:'Done'})}<div class="sbody"><div class="card"><div class="keys">${KEYS.map(([k,l])=>`<div>${k.split(' or ').map(x=>`<kbd>${esc(x)}</kbd>`).join(' ')}</div><span>${esc(l)}</span>`).join('')}</div></div></div>`}
 document.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&!e.altKey&&e.key.toLowerCase()==='k'){e.preventDefault();openCmd();return}
@@ -2074,6 +2157,7 @@ document.addEventListener('keydown',e=>{
   switch(e.key){
     case'/':go(openCmd);break;
     case'?':go(()=>openSheet(keysSheet));break;
+    case'g':{const f=$('.projfind');if(f)go(()=>{f.focus();f.select()});break}
     case'n':go(shortcutNew);break;
     case't':go(()=>handle('date:today',document.body));break;
     case'1':case'2':case'3':go(()=>{ui.mode=['list','day','week'][+e.key-1];ui.adding=null;ui.listAnim=true;try{localStorage.setItem(LS_KEY+':mode',ui.mode)}catch(x){}renderApp()});break;
@@ -2239,8 +2323,37 @@ document.addEventListener('change',e=>{const el=e.target;if(el.matches&&el.match
 const _focusPill=focusPill;
 focusPill=function(){const base=_focusPill();if(POMO.end&&!base)return`<button class="pill live press" style="--c:${POMO.phase==='work'?'#FF453A':'#30D158'}" data-act="focus:open"><i></i>${phaseName(POMO.phase)} <span class="pomopill tabular">${fmtClock(pomoRem())}</span></button>`;return base};
 
+/* new project: follow the name with a guessed icon until one is picked by hand */
+document.addEventListener('click',e=>{const c=e.target.closest('#projForm [data-act="chip:set"][data-name="icon"]');if(c)c.closest('form').dataset.manualIcon='1'},true);
+document.addEventListener('input',e=>{const el=e.target;if(!el.matches('#projForm input[name="name"]'))return;const f=el.form;if(f.dataset.id||f.dataset.manualIcon)return;
+  const k=guessIcon(el.value)||f.dataset.freshIcon;const inp=f.querySelector('input[name="icon"]');if(!inp||inp.value===k)return;inp.value=k;
+  $$('.icongrid [data-name="icon"]',f).forEach(b=>b.classList.toggle('on',b.dataset.value===k))});
+
+/* ---- desktop project sidebar ---- */
+ui.projFilter='';
+function projSidebar(){
+  const ps=Object.values(state.projects).sort((a,b)=>a.name.localeCompare(b.name));
+  const cnt=pid=>tasksArr().filter(t=>!t.done&&(pid==='inbox'?!t.projectId:t.projectId===pid)).length;
+  const item=(pid,name,icon,color)=>{const n=cnt(pid);return`<button class="proj ${ui.pid===pid?'on':''}" data-act="proj:select" data-pid="${pid}" data-project="${pid==='inbox'?'':pid}" data-name="${esc(name.toLowerCase())}" style="--c:${color}"><span class="pic">${ico(icon,2.2)}</span><span class="pn">${esc(name)}</span><span class="cnt">${n||''}</span></button>`};
+  return`<nav class="sidebar" aria-label="Projects">
+    <div class="sfind">${ico('search',2.2)}<input class="projfind" placeholder="Find a project" value="${esc(ui.projFilter)}" autocomplete="off" aria-label="Find a project"></div>
+    <div class="plist">${item('inbox','Inbox','inbox','#0A84FF')}
+      <div class="plabel">Projects <span>${ps.length||''}</span></div>
+      ${ps.map(p=>item(p.id,p.name,p.icon||'tag',p.color)).join('')||'<div class="pnone">No projects yet.</div>'}
+      <div class="pnone" id="pnomatch" hidden>No project matches.</div></div>
+    <div class="sfoot"><button class="sbtn press" data-act="project:new">${I.plus}<span>New project</span></button><button class="sbtn icon press" data-act="cmd:open" aria-label="Search">${ico('search',2.2)}</button><button class="sbtn icon press" data-act="settings:open" aria-label="Settings">${I.gear}</button></div></nav>`}
+function panelTitle(){const p=currentProject();const n=tasksArr().filter(t=>!t.done&&(p?t.projectId===p.id:!t.projectId)).length;
+  return`<div class="ptitle" style="--c:${p?p.color:'#0A84FF'}"><span class="pic">${ico(p?(p.icon||'tag'):'inbox',2.2)}</span><h1>${esc(p?p.name:'Inbox')}</h1><span class="cnt">${n||''}</span>${p?`<button class="more press" data-act="project:edit" data-id="${p.id}" aria-label="Edit project">Edit</button>`:''}</div>`}
+function filterSidebar(){const q=ui.projFilter.trim().toLowerCase();let shown=0;
+  $$('.plist .proj[data-project]:not([data-pid="inbox"])').forEach(b=>{const hit=!q||b.dataset.name.includes(q);b.hidden=!hit;if(hit)shown++});
+  const nm=$('#pnomatch');if(nm)nm.hidden=!q||shown>0}
+document.addEventListener('input',e=>{if(e.target.matches('.projfind')){ui.projFilter=e.target.value;filterSidebar()}});
+document.addEventListener('keydown',e=>{if(!e.target.matches||!e.target.matches('.projfind'))return;
+  if(e.key==='Enter'){e.preventDefault();const first=$$('.plist .proj[data-pid]').find(b=>!b.hidden&&b.dataset.pid!=='inbox'&&ui.projFilter.trim());if(first){selectProject(first.dataset.pid)}e.target.blur()}
+  if(e.key==='Escape'){ui.projFilter='';e.target.value='';filterSidebar();e.target.blur()}});
+
 /* ---- version & updates ---- */
-const APP_VERSION='1.2.4';
+const APP_VERSION='1.3.0';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
@@ -2286,8 +2399,8 @@ setInterval(tickFocus,1000);
 setInterval(()=>{updateNowLine();checkNotify()},20000);
 let lastDay=todayYmd();
 setInterval(()=>{if(todayYmd()!==lastDay){lastDay=todayYmd();materialized.clear();syncRoutines();autoArchive();renderApp();autoRollover()}},60000);
-let wasWide=isWide();
-window.addEventListener('resize',()=>{if(isWide()!==wasWide){wasWide=isWide();closeAllSheets();renderApp()}else if(!isWide()){const c=$('.cal');if(c&&!G.mode)c.style.height=calHeight()+'px'}});
+let wasWide=isWide(),wasSide=hasSidebar();
+window.addEventListener('resize',()=>{if(hasSidebar()!==wasSide&&isWide()===wasWide){wasSide=hasSidebar();renderApp()}if(isWide()!==wasWide){wasWide=isWide();wasSide=hasSidebar();closeAllSheets();renderApp()}else if(!isWide()){const c=$('.cal');if(c&&!G.mode)c.style.height=calHeight()+'px'}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){scheduleRender();tickFocus()}});
 </script>
 </body>

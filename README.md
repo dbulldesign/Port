@@ -38,6 +38,11 @@ Everything runs on the device:
 
 Preferences (focus hours, buffer, breaks, lunch) are in Settings → Scheduling.
 
+## Projects
+
+- New projects get a colour no other project uses, and an icon guessed from the name ("Tavern on the Green" gets a fork and knife, "Gym" a dumbbell, "Taxes" a coin). If nothing in the name fits, the icon is picked at random from the ones not used yet. You can always change either.
+- On a wide screen (desktop, iPad landscape) projects are listed in a sidebar with a **Find a project** box: type a few letters and press Enter to jump to the first match. Press `g` to get to the box from anywhere.
+
 ## Daily flow
 
 - **Plan your day** (banner each morning, or `p`): review what slipped, pick from the backlog, size each to do, set an intention, then smart-schedule it.
