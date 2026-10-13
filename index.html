@@ -642,6 +642,8 @@ const PALETTE=['#FF3B30','#FF9500','#FFCC00','#34C759','#00C7BE','#30B0C7','#007
 const NOCOLOR='#8E8E93';
 /* a random colour no other project uses yet; once all are taken, a random one of the least used */
 function pickProjectColor(){const n=c=>Object.values(state.projects).filter(p=>p.color===c).length;const min=Math.min(...PALETTE.map(n));const pool=PALETTE.filter(c=>n(c)===min);return pool[Math.floor(Math.random()*pool.length)]}
+/* same idea for icons (Inbox keeps its own) */
+function pickProjectIcon(){const keys=ICON_KEYS.filter(k=>k!=='inbox');const n=k=>Object.values(state.projects).filter(p=>(p.icon||'tag')===k).length;const min=Math.min(...keys.map(n));const pool=keys.filter(k=>n(k)===min);return pool[Math.floor(Math.random()*pool.length)]}
 function colorOf(pid){const p=pid&&state.projects[pid];return p?p.color:NOCOLOR}
 function cvars(hex){return`--c:${hex}`}
 
@@ -842,7 +844,7 @@ function findOrCreateProject(name){
   const found=Object.values(state.projects).find(p=>p.name.toLowerCase()===lower);
   if(found)return found;
   const color=pickProjectColor();
-  const id=uid('p');const p={id,name,color,icon:'tag',createdAt:Date.now()};put('projects',id,p);return p;
+  const id=uid('p');const p={id,name,color,icon:pickProjectIcon(),createdAt:Date.now()};put('projects',id,p);return p;
 }
 function currentBlock(){
   const n=nowMin();const todays=blocksOn(todayYmd()).filter(b=>b.start<=n&&n<blockEnd(b));
@@ -1178,9 +1180,9 @@ function taskSheet(id){return()=>{
     <div class="card" style="margin-top:14px"><button type="button" class="frow" data-act="task:delete" data-id="${id}" style="width:100%;justify-content:center;color:var(--red);font-weight:500">Delete to do</button></div>
   </form></div>`;
 }}
-function projectSheet(id){const fresh=pickProjectColor();return()=>{
+function projectSheet(id){const fresh=pickProjectColor(),freshIcon=pickProjectIcon();return()=>{
   const p=id?state.projects[id]:null;
-  const color=p?p.color:fresh;const icon=p?(p.icon||'tag'):'tag';
+  const color=p?p.color:fresh;const icon=p?(p.icon||'tag'):freshIcon;
   return`${snav(p?'Edit Project':'New Project',{act:'sheet:close',label:'Cancel'},{act:'noop',label:p?'Save':'Add',form:'projForm'})}
   <div class="sbody"><form id="projForm" data-act="project:save" data-id="${id||''}">
     <div class="card"><div class="frow big"><input name="name" value="${p?esc(p.name):''}" placeholder="Project name" required ${p?'':'autofocus'} autocomplete="off" aria-label="Name"></div></div>
@@ -2238,7 +2240,7 @@ const _focusPill=focusPill;
 focusPill=function(){const base=_focusPill();if(POMO.end&&!base)return`<button class="pill live press" style="--c:${POMO.phase==='work'?'#FF453A':'#30D158'}" data-act="focus:open"><i></i>${phaseName(POMO.phase)} <span class="pomopill tabular">${fmtClock(pomoRem())}</span></button>`;return base};
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.2.3';
+const APP_VERSION='1.2.4';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
