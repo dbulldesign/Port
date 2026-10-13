@@ -83,4 +83,14 @@ If you also rename the repository from `harbor` to `port`, the address changes t
 - Every device keeps a full copy and works offline; changes merge when it's back online, newest edit wins per item.
 - The device link contains your sync token: share it only with yourself.
 - Every sync is saved as a revision of the gist, so GitHub keeps a full history (open the gist → Revisions).
-- To update the app later, upload a new `index.html` to the repository. Open devices will show "Update ready".
+- The version you're running is at the top of Settings. Port checks for a new version when it opens, when you come back to it, and every 30 minutes. When one is out, a "Version x.y.z is ready" bar appears with an **Update** button. You can also tap **Check** in Settings.
+
+## Releasing a new version
+
+Change the version number in three places (all the same, e.g. `1.3.0`), then upload or push the files:
+
+1. `version.json`: `"version"` (and optionally a one-line `"notes"`)
+2. `index.html`: `const APP_VERSION='1.3.0';`
+3. `sw.js`: `const VERSION='1.3.0';`
+
+Devices that have the app open will show the update bar within about 30 minutes, or straight away when they're reopened.
