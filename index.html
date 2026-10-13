@@ -44,8 +44,8 @@ svg{display:block}
 .press:active{transform:scale(.95);opacity:.7}
 .tabular{font-variant-numeric:tabular-nums}
 @keyframes rowin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-@keyframes slideL{from{opacity:.3;transform:translateX(36px)}to{opacity:1;transform:none}}
-@keyframes slideR{from{opacity:.3;transform:translateX(-36px)}to{opacity:1;transform:none}}
+@keyframes slideL{from{opacity:0;transform:translate3d(56px,0,0)}to{opacity:1;transform:none}}
+@keyframes slideR{from{opacity:0;transform:translate3d(-56px,0,0)}to{opacity:1;transform:none}}
 @keyframes scalein{from{opacity:0;transform:scale(.6)}60%{transform:scale(1.04)}to{opacity:1;transform:none}}
 @keyframes fadein{from{opacity:0}to{opacity:1}}
 @keyframes up{from{transform:translateY(100%)}to{transform:none}}
@@ -53,8 +53,8 @@ svg{display:block}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,69,58,.45)}50%{box-shadow:0 0 0 6px rgba(255,69,58,0)}}
 @keyframes focusin{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:none}}
 @keyframes numin{from{opacity:0;transform:translateY(16px) scale(.9)}to{opacity:1;transform:none}}
-.anim-l{animation:slideL .32s var(--ease)}
-.anim-r{animation:slideR .32s var(--ease)}
+.anim-l{animation:slideL .34s cubic-bezier(.2,.9,.3,1)}
+.anim-r{animation:slideR .34s cubic-bezier(.2,.9,.3,1)}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
 #app{height:100%;position:relative}
@@ -62,7 +62,7 @@ svg{display:block}
 
 /* calendar card */
 .cal{flex:none;position:relative;margin:4px 8px 0;border-radius:30px;background:var(--cal-bg);color:var(--cal-ink);overflow:hidden;
-  transition:height .5s var(--ease);box-shadow:0 2px 0 rgba(255,255,255,.03) inset}
+  transition:height .42s cubic-bezier(.25,1.05,.4,1);box-shadow:0 2px 0 rgba(255,255,255,.03) inset}
 .cal.resizing{transition:none}
 .cal .timeline{position:absolute;left:0;right:0;top:0;bottom:var(--dh);overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
 .cal.min .timeline{display:none}
@@ -122,7 +122,7 @@ svg{display:block}
 .empty-day b{display:block;color:var(--cal-ink);font-weight:600;font-size:17px;margin-bottom:4px}
 .timebadge{position:absolute;left:4px;top:0;transform:translateY(-50%);font-size:11px;font-weight:700;color:#fff;background:var(--tint);padding:3px 7px;border-radius:7px;z-index:9;pointer-events:none;white-space:nowrap}
 .dropline{position:absolute;left:0;right:0;height:2px;background:var(--tint);z-index:8;pointer-events:none;border-radius:1px}
-.ghost{position:fixed;z-index:100;pointer-events:none;border-radius:14px;box-shadow:var(--shadow);transform-origin:center;transition:transform .09s linear,opacity .2s;will-change:transform}
+.ghost{position:fixed;z-index:100;pointer-events:none;border-radius:14px;box-shadow:var(--shadow);transform-origin:center;transition:opacity .2s;will-change:transform}
 .ghost.fly{transition:transform .28s var(--ease),opacity .28s,width .28s,height .28s,left .28s,top .28s}
 .ghost .inner{border-radius:14px;background:var(--card)}
 
@@ -135,7 +135,7 @@ svg{display:block}
 .list{list-style:none}
 .list.enter li{animation:rowin .36s var(--ease) both;animation-delay:calc(var(--i,0)*22ms)}
 .task{position:relative;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:pan-y}
-.task .inner{display:flex;align-items:center;gap:14px;padding:9px 22px;background:var(--card);position:relative;z-index:2;transition:transform .28s var(--ease);min-height:48px}
+.task .inner{display:flex;align-items:center;gap:14px;padding:9px 22px;background:var(--card);position:relative;z-index:2;transition:transform .4s cubic-bezier(.2,1,.3,1);min-height:48px}
 .task .inner.noanim{transition:none}
 .task.dragging{opacity:.3}
 .task.removing{animation:collapse .3s forwards}
@@ -206,7 +206,7 @@ svg{display:block}
 .focusview .big small{font-size:.6em;letter-spacing:-2px}
 .focusview .sub{font-size:15px;color:var(--label2)}
 .focusview .bar{width:160px;height:4px;border-radius:2px;background:var(--fill);margin:18px auto 0;overflow:hidden}
-.focusview .bar i{display:block;height:100%;background:var(--c);width:0;transition:width 1s linear}
+.focusview .bar i{display:block;height:100%;background:var(--c);width:100%;transform:scaleX(0);transform-origin:left;transition:transform 1s linear}
 .focusview .todo-card{flex:0 1 auto;max-height:46%;margin:0 0 12px;animation:rowin .4s var(--ease) .1s both}
 .focusview .btn{animation:rowin .4s var(--ease) .18s both}
 .focusview>.btn{flex:none}
@@ -615,6 +615,23 @@ svg{display:block}
 .pva .bar.act{background:var(--tint)}
 .pva .bar.est{background:var(--label3)}
 .objprog{font-size:12px;color:var(--label2);margin-left:4px}
+
+/* ---- smoothness: compositor-only pulses, no live blur over scrolling content on touch screens ---- */
+@keyframes ripple{0%{transform:scale(1);opacity:.6}100%{transform:scale(2.8);opacity:0}}
+@keyframes breathe{0%,100%{opacity:.2}50%{opacity:1}}
+.pill.live i{position:relative;animation:none}
+.pill.live i::after,#updbar i::after,.nowline::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;animation:ripple 2s ease-out infinite;will-change:transform,opacity}
+#updbar i{position:relative;animation:none}
+.nowline::before{animation:none}
+.nowline::after{inset:auto;left:-4px;top:-3.5px;width:8px;height:8px;background:var(--red)}
+.block.focusing{animation:none;box-shadow:0 0 0 2px var(--c)}
+.block.focusing::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 16px color-mix(in srgb,var(--c) 60%,transparent);animation:breathe 2.6s ease-in-out infinite;will-change:opacity}
+.sheet{transform:translate3d(0,0,0)}
+@media (hover:none){
+  .pill,#toast,#updbar{-webkit-backdrop-filter:none;backdrop-filter:none}
+  .pill:not(.live):not(.ai){background:rgba(44,44,46,.97)}
+  #toast,#updbar{background:rgba(44,44,46,.98)}
+}
 </style>
 </head>
 <body>
@@ -1199,7 +1216,7 @@ function tickFocus(){
   if(b.date===t&&sec>=s&&sec<e){const r=e-sec;big=r>=60?`${Math.ceil(r/60)}<small>min</small>`:`${r}<small>s</small>`;sub=`until ${fmtTime(blockEnd(b))}`;p=(sec-s)/(e-s)}
   else if(b.date>t||(b.date===t&&sec<s)){const u=b.date===t?s-sec:(fromYmd(b.date)-fromYmd(t))/1000+s-sec;big=u<3600?`in ${Math.ceil(u/60)}<small>min</small>`:u<86400?`in ${Math.ceil(u/3600)}<small>h</small>`:`in ${Math.round(u/86400)}<small>d</small>`;sub=`${fmtDay(b.date)}, starts ${fmtTime(b.start)}`}
   else{big=`<small>ended</small>`;sub=`${fmtTime(b.start)} – ${fmtTime(blockEnd(b))}, ${fmtDur(b.duration)}`;p=1}
-  if(big!==lastCd){cd.innerHTML=big;lastCd=big}cd.classList.toggle('last',b.date===t&&sec>=s&&e-sec<60&&e-sec>0);if(cl)cl.textContent=sub;if(pr)pr.style.width=(p*100).toFixed(1)+'%';
+  if(big!==lastCd){cd.innerHTML=big;lastCd=big}cd.classList.toggle('last',b.date===t&&sec>=s&&e-sec<60&&e-sec>0);if(cl)cl.textContent=sub;if(pr)pr.style.transform=`scaleX(${p.toFixed(4)})`;
 }
 
 /* ============ sheets ============ */
@@ -1207,7 +1224,10 @@ const sheetStack=[];
 function openSheet(fn){sheetStack.push(fn);drawSheet()}
 function closeSheet(){sheetStack.pop();if(sheetStack.length)drawSheet();else{$('#overlay').hidden=true;$('#overlay').innerHTML='';$('#toast').classList.remove('top')}}
 function closeAllSheets(){sheetStack.length=0;$('#overlay').hidden=true;$('#overlay').innerHTML='';$('#toast').classList.remove('top')}
-function dismissSheet(){const s=$('.sheet');if(!s){closeSheet();return}s.classList.add('closing');setTimeout(closeSheet,200)}
+function dismissSheet(v=0){const s=$('.sheet');if(!s){closeSheet();return}const ov=$('#overlay');const wide=isWide();const ms=Math.round(Math.max(170,Math.min(300,260-v*60)));
+  s.style.transition=`transform ${ms}ms cubic-bezier(.2,.7,.3,1),opacity ${ms}ms`;s.style.transform=wide?'translate3d(0,30px,0)':'translate3d(0,100%,0)';if(wide)s.style.opacity='0';
+  if(ov&&sheetStack.length<=1){ov.style.transition=`background ${ms}ms`;ov.style.background='rgba(0,0,0,0)'}
+  setTimeout(()=>{closeSheet();if(ov){ov.style.transition='';ov.style.background=''}},ms)}
 function drawSheet(){
   const ov=$('#overlay');const fn=sheetStack[sheetStack.length-1];
   ov.innerHTML=`<div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${fn()}</div>`;ov.hidden=false;$('#toast').classList.add('top');
@@ -1546,13 +1566,13 @@ document.addEventListener('pointerdown',e=>{
     return}
   if(!G.pending.mouse&&G.pending.draggable)G.timer=setTimeout(()=>{if(G.pending&&!G.mode)liftDrag()},380);
 },{passive:true});
-document.addEventListener('pointermove',e=>{
+function gestureMove(e){
   const p=G.pending;if(!p)return;const dx=e.clientX-p.sx,dy=e.clientY-p.sy;
   if(G.mode==='drag'){moveDrag(e);return}
   if(G.mode==='swipe'){moveSwipe(dx);return}
-  if(G.mode==='sheet'){p.el.style.transition='none';p.el.style.transform=`translateY(${Math.max(0,dy)}px)`;return}
+  if(G.mode==='sheet'){p.el.style.transition='none';p.el.style.transform=`translate3d(0,${dy>0?dy:dy*.15}px,0)`;const ov=$('#overlay');if(ov)ov.style.background=`rgba(0,0,0,${Math.max(.15,.5-Math.max(0,dy)/1200)})`;return}
   if(G.mode==='calresize'){const pts=calPoints();p.el.classList.add('resizing');p.el.style.height=Math.max(pts.min,Math.min(pts.full+40,p.h0+dy))+'px';return}
-  if(G.mode==='dayswipe'){const g=$('.tl-grid');if(g){g.style.transition='none';g.style.transform=`translateX(${dx*.35}px)`;g.style.opacity=String(Math.max(.5,1-Math.abs(dx)/400))}return}
+  if(G.mode==='dayswipe'){const g=$('.tl-grid');if(g){g.style.transition='none';g.style.willChange='transform';g.style.transform=`translate3d(${dx}px,0,0)`;g.style.opacity=String(Math.max(.35,1-Math.abs(dx)/700))}return}
   if(G.mode==='slotdrag'){moveProvisional(slotTime(p.el,e.clientY-p.offset));return}
   if(G.mode==='draw'){const a=p.start,b=slotTime(p.el,e.clientY);const s=Math.min(a,b),d=Math.max(15,Math.abs(b-a));moveProvisional(s,d);return}
   if(G.mode==='projedit')return;
@@ -1566,18 +1586,30 @@ document.addEventListener('pointermove',e=>{
   if(ad>ady&&p.kind==='task'){clearTimeout(G.timer);G.mode='swipe';startSwipe(p.el);moveSwipe(dx);return}
   if(ad>ady&&p.kind==='block'&&!isWide()){clearTimeout(G.timer);G.mode='dayswipe';return}
   clearTimeout(G.timer);G.pending=null;
-},{passive:true});
+}
+/* visual updates run once per frame; the latest finger position wins */
+const VISUAL=new Set(['drag','swipe','sheet','calresize','dayswipe','slotdrag','draw']);
+document.addEventListener('pointerdown',()=>{G.vs=[]},{capture:true,passive:true});
+document.addEventListener('pointermove',e=>{
+  const vs=G.vs||(G.vs=[]);vs.push({t:e.timeStamp,x:e.clientX,y:e.clientY});while(vs.length>2&&e.timeStamp-vs[0].t>100)vs.shift();
+  if(G.mode&&VISUAL.has(G.mode)){G.lastE=e;if(!G.raf)G.raf=requestAnimationFrame(()=>{G.raf=0;const le=G.lastE;G.lastE=null;if(le)gestureMove(le)});return}
+  gestureMove(e)},{passive:true});
+/* finger speed in px/ms over the last ~100ms (0 if the finger rested before lifting) */
+function vel(){const v=G.vs||[];if(v.length<2)return{x:0,y:0};const a=v[0],b=v[v.length-1];if(performance.now()-b.t>90)return{x:0,y:0};const dt=Math.max(8,b.t-a.t);return{x:(b.x-a.x)/dt,y:(b.y-a.y)/dt}}
 function endGesture(e,cancelled){
-  const p=G.pending;clearTimeout(G.timer);if(!p){G.mode=null;return}
+  if(G.raf){cancelAnimationFrame(G.raf);G.raf=0;if(G.lastE&&!cancelled)gestureMove(G.lastE)}G.lastE=null;
+  const p=G.pending;clearTimeout(G.timer);if(!p){G.mode=null;return}const V=vel();
   const dx=e?e.clientX-p.sx:0,dy=e?e.clientY-p.sy:0;const mode=G.mode;
   if(mode==='drag')endDrag(e,cancelled);
-  else if(mode==='swipe')endSwipe();
-  else if(mode==='sheet'){p.el.style.transition='';if(dy>110&&!cancelled){p.el.style.transform='';dismissSheet()}else p.el.style.transform=''}
+  else if(mode==='swipe')endSwipe(V.x);
+  else if(mode==='sheet'){if(!cancelled&&(dy>110||(V.y>.5&&dy>30)))dismissSheet(V.y);else{p.el.style.transition='transform .45s cubic-bezier(.2,1,.3,1)';p.el.style.transform='';const ov=$('#overlay');if(ov)ov.style.background='';setTimeout(()=>{p.el.style.transition=''},460)}}
   else if(mode==='calresize'){const pts=calPoints();const h=p.el.offsetHeight;let best='half',bd=1e9;for(const k in pts){const d=Math.abs(pts[k]-h);if(d<bd){bd=d;best=k}}
-    if(Math.abs(dy)>40){if(dy>0&&best===ui.cal&&best!=='full')best=best==='min'?'half':'full';if(dy<0&&best===ui.cal&&best!=='min')best=best==='full'?'half':'min'}
+    if(Math.abs(dy)>40||(Math.abs(V.y)>.35&&Math.abs(dy)>12)){if(dy>0&&best===ui.cal&&best!=='full')best=best==='min'?'half':'full';if(dy<0&&best===ui.cal&&best!=='min')best=best==='full'?'half':'min'}
     ui.cal=best;saveUi();p.el.classList.remove('resizing');p.el.className='cal '+best;p.el.style.height=pts[best]+'px';haptic(6);G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300)}
-  else if(mode==='dayswipe'){const g=$('.tl-grid');if(g){g.style.transition='transform .45s var(--spring),opacity .3s';g.style.transform='';g.style.opacity=''}G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);
-    if(!cancelled&&Math.abs(dx)>60)setDate(shiftYmd(ui.date,dx<0?1:-1),dx<0?'next':'prev')}
+  else if(mode==='dayswipe'){const g=$('.tl-grid');G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);
+    const go=!cancelled&&(Math.abs(dx)>60||(Math.abs(V.x)>.4&&Math.abs(dx)>20));const fwd=go?(Math.abs(V.x)>.4?V.x<0:dx<0):false;
+    if(go){if(g){g.style.transition='transform .17s cubic-bezier(.3,.7,.5,1),opacity .17s';g.style.transform=`translate3d(${(fwd?-1:1)*Math.round((g.offsetWidth||320)*.5)}px,0,0)`;g.style.opacity='0'}haptic(5);setTimeout(()=>setDate(shiftYmd(ui.date,fwd?1:-1),fwd?'next':'prev'),160)}
+    else if(g){g.style.transition='transform .45s cubic-bezier(.2,1,.3,1),opacity .3s';g.style.transform='';g.style.opacity='';setTimeout(()=>{g.style.willChange=''},460)}}
   else if(mode==='slotdrag'||mode==='draw'){G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);if(cancelled)cancelProvisional();else focusProvisional()}
   else if(mode==='projedit'){G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300)}
   else if(p.kind==='slot'&&!cancelled&&Math.abs(dx)<7&&Math.abs(dy)<7){G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);createProvisional(p.el,p.start);focusProvisional()}
@@ -1590,12 +1622,13 @@ document.addEventListener('touchmove',e=>{if(['drag','swipe','sheet','calresize'
 document.addEventListener('contextmenu',e=>{if(e.target.closest('.task,.block,.proj,.daycol'))e.preventDefault()});
 
 /* swipe */
-function startSwipe(row){closeSwipe();SW.cur={row,inner:row.querySelector('.inner'),dx:0};SW.cur.inner.classList.add('noanim')}
-function moveSwipe(dx){const s=SW.cur;if(!s)return;let x=dx;if(x>0)x=Math.min(x,120)*0.9;else x=Math.max(x,-230);const was=s.row.classList.contains('armed');s.dx=x;s.inner.style.transform=`translateX(${x}px)`;const armed=x>72;s.row.classList.toggle('armed',armed);if(armed&&!was)haptic(6)}
-function endSwipe(){const s=SW.cur;if(!s)return;s.inner.classList.remove('noanim');G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);
-  if(s.dx>72){s.inner.style.transform='';s.row.classList.remove('armed');toggleTask(s.row.dataset.task)}
+function startSwipe(row){closeSwipe();SW.cur={row,inner:row.querySelector('.inner'),dx:0};SW.cur.inner.classList.add('noanim');SW.cur.inner.style.willChange='transform'}
+const rubber=(x,lim)=>Math.abs(x)<=lim?x:Math.sign(x)*(lim+(Math.abs(x)-lim)*.3);
+function moveSwipe(dx){const s=SW.cur;if(!s)return;const x=dx>0?rubber(dx,110):rubber(dx,210);const was=s.row.classList.contains('armed');s.dx=x;s.inner.style.transform=`translate3d(${x}px,0,0)`;const armed=x>72;s.row.classList.toggle('armed',armed);if(armed&&!was)haptic(6)}
+function endSwipe(vx=0){const s=SW.cur;if(!s)return;s.inner.classList.remove('noanim');G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);const inner=s.inner;setTimeout(()=>{inner.style.willChange=''},450);
+  if(s.dx>72||(vx>.45&&s.dx>28)){s.inner.style.transform='';s.row.classList.remove('armed');toggleTask(s.row.dataset.task)}
   else if(s.dx<-200){s.inner.style.transform='translateX(-110%)';setTimeout(()=>deleteTask(s.row.dataset.task),120)}
-  else if(s.dx<-70){s.inner.style.transform='translateX(-160px)';SW.open=s.row}
+  else if(s.dx<-70||(vx<-.45&&s.dx<-28)){s.inner.style.transform='translate3d(-160px,0,0)';SW.open=s.row}
   else{s.inner.style.transform='';s.row.classList.remove('armed')}SW.cur=null}
 
 /* hold and carry */
@@ -2367,7 +2400,7 @@ document.addEventListener('keydown',e=>{if(!e.target.matches||!e.target.matches(
   if(e.key==='Escape'){ui.projFilter='';e.target.value='';filterSidebar();e.target.blur()}});
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.3.1';
+const APP_VERSION='1.3.2';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);

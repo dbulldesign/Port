@@ -1,4 +1,4 @@
 {
-  "version": "1.3.1",
-  "notes": "Sync fixes: setup links work in an open app, paste a setup link, visible sync problems"
+  "version": "1.3.2",
+  "notes": "Smoother swipes, sheets and animations, especially on iPhone"
 }
