@@ -1,4 +1,4 @@
 {
-  "version": "1.3.3",
-  "notes": "Offline and back-online messages, sturdier offline start on iPhone"
+  "version": "1.3.4",
+  "notes": "Sync retries calmly with no connection and catches up as soon as it is back"
 }
