@@ -1246,7 +1246,7 @@ function dayColHtml(date){
     return`<div class="block ext ${date<t||(date===t&&x.start+x.duration<=n)?'past':''}" role="button" tabindex="0" data-act="ext:open" data-title="${esc(x.title)}" data-when="${esc(fmtTimeShort(x.start)+'–'+fmtTimeShort(x.start+x.duration))}" data-cal="${esc(x.cal)}" style="top:${top}px;height:${h}px;left:calc(${L.lane*w}% + 4px);width:calc(${w}% - 8px);${cvars(x.color)}"><div class="bh"><span class="bt">${esc(x.title)}</span></div>${h>=44?`<div class="bm">${fmtTimeShort(x.start)}–${fmtTimeShort(x.start+x.duration)}</div>`:''}</div>`}).join('');
   const ad=ext.filter(x=>x.allDay);const allday=ad.length?`<div class="allday" style="${cvars(ad[0].color)}"><i></i>${esc(ad[0].title)}${ad.length>1?` +${ad.length-1}`:''}</div>`:'';
   const now=date===t&&n>=hs&&n<=he?`<div class="nowline" style="top:${(n-hs)/60*hh}px"></div>`:'';
-  const empty=!blocks.length&&!timed.length&&!isWide()&&ui.calView!=='week'?`<div class="empty-day"><b>Give the day a shape</b>Tap a time to add a block, or hold a to do and carry it here.</div>`:'';
+  const empty=!blocks.length&&!timed.length&&!isWide()&&ui.calView!=='week'?`<div class="empty-day"><b>Give the day a shape</b>${date===t?'Tap to start a timer, hold to add a block, or carry a to do here.':'Tap a time to add a block, or hold a to do and carry it here.'}</div>`:'';
   return`<div class="daycol" data-date="${date}">${allday}${exts}${items}${now}${empty}</div>`;
 }
 
@@ -1668,7 +1668,7 @@ document.addEventListener('pointerdown',e=>{
   else if(proj&&proj.dataset.pid!=='inbox'){G.pending={kind:'proj',el:proj,id:proj.dataset.pid,sx:e.clientX,sy:e.clientY,mouse:e.pointerType==='mouse'};if(!G.pending.mouse)G.timer=setTimeout(()=>{if(G.pending&&!G.mode){G.mode='projedit';haptic(12);openSheet(projectSheet(G.pending.id))}},480);return}
   else if(e.target.closest('.mgrid')&&!isWide()){G.pending={kind:'mswipe',el:e.target.closest('.mgrid'),sx:e.clientX,sy:e.clientY};return}
   else{const col=e.target.closest('.daycol');if(col&&!e.target.closest('.block')){if(PROV){return}G.pending={kind:'slot',el:col,sx:e.clientX,sy:e.clientY,mouse:e.pointerType==='mouse',start:slotTime(col,e.clientY)};
-      if(!G.pending.mouse)G.timer=setTimeout(()=>{const p=G.pending;if(p&&!G.mode){G.mode='slotdrag';haptic(14);createProvisional(p.el,p.start);p.offset=e.clientY-(p.el.getBoundingClientRect().top+(p.start-state.settings.dayStart*60)/60*hourPx())}},420);return}
+      G.timer=setTimeout(()=>{const p=G.pending;if(p&&!G.mode){G.mode='slotdrag';haptic(14);createProvisional(p.el,p.start);p.offset=e.clientY-(p.el.getBoundingClientRect().top+(p.start-state.settings.dayStart*60)/60*hourPx())}},420);return}
     return}
   if(!G.pending.mouse&&G.pending.draggable)G.timer=setTimeout(()=>{if(G.pending&&!G.mode)liftDrag()},380);
 },{passive:true});
@@ -1729,7 +1729,7 @@ function endGesture(e,cancelled){
     else G.dayAnim=spring({from:dx,to:0,v0:vx,k:190,zeta:.9,update:x=>{g.style.transform=`translate3d(${x}px,0,0)`;g.style.opacity=String(Math.max(.35,1-Math.abs(x)/700))},done:()=>{g.style.transform='';g.style.opacity='';g.style.willChange='';G.dayAnim=null}})}
   else if(mode==='slotdrag'||mode==='draw'){G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);if(cancelled)cancelProvisional();else focusProvisional()}
   else if(mode==='projedit'){G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300)}
-  else if(p.kind==='slot'&&!cancelled&&Math.abs(dx)<7&&Math.abs(dy)<7){G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);createProvisional(p.el,p.start);focusProvisional()}
+  else if(p.kind==='slot'&&!cancelled&&Math.abs(dx)<7&&Math.abs(dy)<7){G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);if(p.el.dataset.date===todayYmd())tapTimer();else{createProvisional(p.el,p.start);focusProvisional()}}
   G.pending=null;G.mode=null;
   if(pendingRender&&!PROV){pendingRender=false;setTimeout(scheduleRender,50)}
 }
@@ -2548,6 +2548,7 @@ const liveBlock=()=>Object.values(state.blocks).find(b=>b.live);
 const liveElapsedSec=b=>Math.max(0,(Date.now()-(b.liveStart||Date.now()))/1000);
 const liveColor=b=>{const c=colorOf(b.projectId);return c===NOCOLOR?'#FF453A':c};
 function liveChip(){const b=liveBlock();if(!b||b.date!==todayYmd())return'';return`<button class="livechip press" data-act="live:stop" style="--c:${liveColor(b)}" aria-label="Stop the timer"><i></i><span class="trun tabular" data-start="${b.liveStart}">${fmtClock(liveElapsedSec(b))}</span></button>`}
+function tapTimer(){const lb=liveBlock();if(lb){toast('Timer is already running. Tap the red pill to stop it.');return}startLive({});setTimeout(()=>toast('Timer started. Hold on the calendar instead to add a block.'),0)}
 function startLive(o={}){
   if(liveBlock())stopLive({silent:true});
   const t=todayYmd(),n=nowMin();const task=o.taskId&&state.tasks[o.taskId];let b=o.blockId&&state.blocks[o.blockId]||null;
@@ -2618,7 +2619,7 @@ function handleLive(act,el){
   return false}
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.5.0';
+const APP_VERSION='1.5.1';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
