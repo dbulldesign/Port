@@ -1,4 +1,4 @@
 {
-  "version": "1.4.2",
-  "notes": "Day swipes, to-do swipes and sheets all move with momentum and springs"
+  "version": "1.5.0",
+  "notes": "Live timer: start from the calendar, a block or a to do; it pushes blocks it runs into and asks what it was for"
 }
