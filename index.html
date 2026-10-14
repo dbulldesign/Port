@@ -635,6 +635,9 @@ svg{display:block}
 }
 
 /* ---- live timer ---- */
+.endedrow{display:flex;align-items:center;gap:16px;margin-top:14px;padding:9px 14px;border-radius:12px;background:var(--fill2);color:var(--label2);font-size:14px}
+.endedrow b{color:var(--label);font-weight:600}
+.endedrow .ed{color:var(--tint);font-weight:600;margin-left:4px}
 .block.live{box-shadow:0 0 0 2px var(--c);z-index:3}
 .block.live::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 18px color-mix(in srgb,var(--c) 55%,transparent);animation:breathe 2s ease-in-out infinite}
 .block.live .bd{background:var(--c);color:#fff;font-variant-numeric:tabular-nums}
@@ -1304,7 +1307,8 @@ function focusHtml(){
   if(!b){const nx=nextBlock();return`<div class="focusview" style="--c:#8E8E93"><div class="top">${focusModes()}<div class="kicker">Nothing scheduled right now</div><div class="big" style="font-size:34px;letter-spacing:-1px;color:var(--label2)">${nx?'Up next: '+esc(nx.title)+' at '+fmtTimeShort(nx.start):'Free for the rest of the day'}</div></div>${nx?`<button class="btn" data-act="block:focus" data-id="${nx.id}">Anchor in to ${esc(nx.title)}</button>`:''}<button class="btn" data-act="focus:close" style="margin-top:10px">Back</button></div>`}
   const col=colorOf(b.projectId);const tasks=tasksIn(b.id);const left=tasks.filter(x=>!x.done).length;
   return`<div class="focusview" style="${cvars(col)}">
-    <div class="top">${focusModes()}<div class="kicker"><span class="bic">${ico(blockIcon(b),2.2)}</span>${esc(b.title)}</div>${ui.focusMode==='pomo'?pomoHtml():`<div class="big" id="cd">–</div><div class="sub" id="cl"></div><div class="bar"><i id="prog"></i></div>`}</div>
+    <div class="top">${focusModes()}<div class="kicker"><span class="bic">${ico(blockIcon(b),2.2)}</span>${esc(b.title)}</div>${ui.focusMode==='pomo'?pomoHtml():`<div class="big" id="cd">–</div><div class="sub" id="cl"></div><div class="bar"><i id="prog"></i></div>`}
+      ${!b.live&&(b.date<todayYmd()||(b.date===todayYmd()&&blockEnd(b)<=nowMin()))?`<button class="endedrow press" data-act="block:edit" data-id="${b.id}"><span>Started <b>${fmtTimeShort(b.start)}</b></span><span>Ended <b>${fmtTimeShort(blockEnd(b))}</b></span><span class="ed">Edit</span></button>`:''}</div>
     <div class="todo-card"><div class="todo-h"><span class="dotted"></span>Tasks${left?`<span style="margin-left:auto">${left} left</span>`:''}</div><ul class="list enter">${tasks.map((t,i)=>taskRow(t,{i,timer:true,est:true})).join('')}</ul>
       ${ui.adding&&ui.adding.kind==='block'&&ui.adding.id===b.id?`<div class="newrow"><span class="plus">${I.plus}</span><input class="newinput" placeholder="New To Do" aria-label="New to do" autocomplete="off" enterkeyhint="done" data-act="new:text"></div>`:`<button class="newrow ${tasks.length?'':'dim'}" data-act="todo:newInBlock" data-id="${b.id}"><span class="plus">${I.plus}</span>New To Do</button>`}</div>
     <div class="btnrow" style="margin-top:0">${left?`<button class="btn" data-act="focus:moveLeft" data-id="${b.id}">Move what’s left</button>`:''}<button class="btn" data-act="focus:close">Back</button></div></div>`;
@@ -1357,6 +1361,7 @@ function blockSheet(id){return()=>{
   return`${snav('',{act:'sheet:close',label:'Close'},{act:'block:edit',id,label:'Edit'})}
   <div class="shead" style="${cvars(col)}"><h2><span class="bic">${ico(blockIcon(b),2.1)}</span>${esc(b.title)}</h2><div class="sub">${esc(fmtDay(b.date))}, ${fmtTime(b.start)} – ${fmtTime(blockEnd(b))} (${fmtDur(b.duration)})${b.routineId?', repeats':''}${p?`, ${esc(p.name)}`:''}</div>${pvaLine(tasks)}</div>
   <div class="sbody" style="${cvars(col)}">
+    ${(b.fromTimer||b.liveTask)&&!b.live?`<div class="card" style="margin-bottom:14px"><button class="frow" data-act="block:edit" data-id="${id}" style="width:100%"><label style="min-width:0;flex:1">Timer<small style="display:block;font-size:13px;color:var(--label2)">Started ${fmtTimeShort(b.start)}, ended ${fmtTimeShort(blockEnd(b))} · ${fmtDur(b.duration)}</small></label><span class="val" style="flex:none;color:var(--tint)">Edit end</span>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>`:''}
     <div class="card" style="padding:8px 0 4px"><div class="todo-h" style="padding-left:20px"><span class="dotted"></span>Tasks</div><ul class="list">${tasks.map((t,i)=>taskRow(t,{i})).join('')||`<div class="empty" style="padding-top:6px">Nothing scheduled yet. Add a to do below${isWide()?', or drag one in':', or hold one in the list and carry it here'}.</div>`}</ul>
       ${ui.adding&&ui.adding.kind==='block'&&ui.adding.id===id?`<div class="newrow" style="padding-left:20px"><span class="plus">${I.plus}</span><input class="newinput" placeholder="New To Do" aria-label="New to do" autocomplete="off" enterkeyhint="done" data-act="new:text" autofocus></div>`:`<button class="newrow ${tasks.length?'':'dim'}" style="padding-left:20px" data-act="todo:newInBlock" data-id="${id}"><span class="plus">${I.plus}</span>New To Do</button>`}</div>
     <div class="btnrow">${b.live?`<button class="btn primary" data-act="live:stop" style="--c:#FF453A">Stop timer · <span class="trun tabular" data-start="${b.liveStart}">${fmtClock(liveElapsedSec(b))}</span></button>`:b.date===todayYmd()&&blockEnd(b)>nowMin()?`<button class="btn primary" data-act="live:startBlock" data-id="${id}">${I.play.replace('<svg','<svg style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:4px"')}Start timer</button>`:''}<button class="btn ${b.live||!(b.date===todayYmd()&&blockEnd(b)>nowMin())?'primary':''}" data-act="block:focus" data-id="${id}">Anchor in</button>${left?`<button class="btn" data-act="focus:moveLeft" data-id="${id}">Move what’s left</button>`:''}</div>
@@ -1376,6 +1381,7 @@ function blockEditor(init,withCb){return()=>{
     <div class="card" style="margin-top:14px">
       <div class="frow"><label>Day</label><input type="date" name="date" value="${v.date}" required></div>
       <div class="frow"><label>Starts</label><input type="time" name="start" value="${toHM(v.start)}" step="60" required></div>
+      <div class="frow"><label>Ends</label><input type="time" name="end" value="${toHM((v.start+v.duration)%1440)}" step="60"></div>
       <div class="frow" style="display:block"><label style="display:block;margin-bottom:8px">Duration</label><div class="chips" style="padding:0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${durs.map(d=>`<button type="button" class="chip ${v.duration===d?'on':''}" data-act="chip:set" data-name="duration" data-value="${d}">${fmtDur(d)}</button>`).join('')}<input type="number" name="durationCustom" min="1" max="1440" step="1" placeholder="min" value="${durs.includes(v.duration)?'':v.duration}" aria-label="Custom minutes" style="width:70px;flex:none;background:var(--fill);border:0;border-radius:999px;padding:7px 12px;font-size:15px"></div><input type="hidden" name="duration" value="${v.duration}"></div>
       <div class="frow"><label>Repeat</label><select name="repeat" data-act="repeat:change">${[['none','Never'],['daily','Every day'],['weekdays','Weekdays'],['weekends','Weekends'],['custom','Choose days']].map(([k,l])=>`<option value="${k}" ${repeat===k?'selected':''}>${l}</option>`).join('')}</select></div>
       <div class="frow" id="dayToggles" style="display:${repeat==='custom'?'flex':'none'}"><div class="chips" style="padding:0;width:100%;justify-content:space-between">${WD.map((d,i)=>`<button type="button" class="chip ${days.includes(i)?'on':''}" data-act="chip:toggle" data-name="days" data-value="${i}" style="padding:7px 0;width:38px;justify-content:center">${d[0]}</button>`).join('')}</div><input type="hidden" name="days" value="${days.join(',')}"></div>
@@ -1491,10 +1497,20 @@ function deleteBlock(id,scope){
   materialized.clear();if(ui.focusBlockId===id)ui.focusBlockId=null;
 }
 function createBlock(o){const id=uid('b');(ui.freshBlocks=ui.freshBlocks||[]).push(id);put('blocks',id,{id,title:o.title||'Block',date:o.date,start:o.start,duration:o.duration||60,projectId:o.projectId||null,icon:o.icon||null,createdAt:Date.now()});ui.freshBlock=id;return id}
+/* Starts, Ends and Duration describe one span: whichever the user touched last wins, the others follow */
+function syncBlockTimes(f,changed){
+  const st=f.querySelector('input[name=start]'),en=f.querySelector('input[name=end]'),du=f.querySelector('input[name=duration]'),cu=f.querySelector('input[name=durationCustom]');if(!st||!en||!du)return;
+  const start=fromHM(st.value||'0:0');let dur=parseInt(cu&&cu.value)||parseInt(du.value)||60;
+  if(changed==='end'){if(!en.value)return;dur=fromHM(en.value)-start;if(dur<=0)dur+=1440;dur=Math.max(1,Math.min(1440,dur));du.value=dur;
+    const chips=$$('[data-name="duration"]',f);const hit=chips.find(c=>+c.dataset.value===dur);chips.forEach(c=>c.classList.toggle('on',c===hit));if(cu)cu.value=hit?'':dur}
+  else en.value=toHM((start+dur)%1440);
+}
+document.addEventListener('input',e=>{const el=e.target;if(!el.form||el.form.id!=='blockForm')return;if(el.name==='start')syncBlockTimes(el.form,'start');else if(el.name==='end')syncBlockTimes(el.form,'end');else if(el.name==='durationCustom'){el.form.querySelector('input[name=duration]').value=parseInt(el.value)||el.form.querySelector('input[name=duration]').value;syncBlockTimes(el.form,'duration')}});
+document.addEventListener('change',e=>{const el=e.target;if(el.form&&el.form.id==='blockForm'&&(el.name==='start'||el.name==='end'))syncBlockTimes(el.form,el.name)});
 function saveBlockForm(f){
   const d=readForm(f);const id=f.dataset.id;const b=id?state.blocks[id]:null;
   const title=(d.title||'').trim();if(!title)return;
-  let duration=parseInt(d.durationCustom)||parseInt(d.duration)||60;duration=Math.max(1,Math.min(1440,duration));
+  let duration=parseInt(d.durationCustom)||parseInt(d.duration)||60;if(d.end){let e=fromHM(d.end)-fromHM(d.start);if(e<=0)e+=1440;if(e!==duration&&!d.durationCustom)duration=e}duration=Math.max(1,Math.min(1440,duration));
   const start=fromHM(d.start);const date=d.date||ui.date;const projectId=d.projectId||null;const icon=d.icon||null;const mode=d.repeat||'none';
   const daysFor={daily:[0,1,2,3,4,5,6],weekdays:[1,2,3,4,5],weekends:[0,6],custom:(d.days||'').split(',').filter(x=>x!=='').map(Number)}[mode]||[];
   let newId=id;
@@ -1611,7 +1627,7 @@ function handle(act,el,e){
     case'confirm:do':{const b=confirmCb&&confirmCb[+el.dataset.i];closeSheet();if(b&&b.fn)b.fn();break}
     case'chip:set':{const f=el.closest('form')||el.closest('.sbody');const inp=f.querySelector(`input[name="${el.dataset.name}"]`);if(inp)inp.value=el.dataset.value;
       $$(`[data-name="${el.dataset.name}"]`,f).forEach(c=>c.classList.toggle('on',c===el));haptic(4);
-      if(el.dataset.name==='duration'){const c=f.querySelector('input[name=durationCustom]');if(c)c.value=''}
+      if(el.dataset.name==='duration'){const c=f.querySelector('input[name=durationCustom]');if(c)c.value='';syncBlockTimes(f,'duration')}
       if(el.dataset.name==='color'||el.dataset.name==='projectId'){const grid=f.querySelector('.icongrid');if(grid)grid.style.setProperty('--c',el.dataset.name==='color'?el.dataset.value:colorOf(el.dataset.value))}break}
     case'chip:toggle':{const f=el.closest('form');const inp=f.querySelector(`input[name="${el.dataset.name}"]`);el.classList.toggle('on');inp.value=$$(`[data-name="${el.dataset.name}"].on`,f).map(c=>c.dataset.value).join(',');break}
     case'repeat:change':{const dt=$('#dayToggles');if(dt)dt.style.display=el.value==='custom'?'flex':'none';break}
@@ -2619,7 +2635,7 @@ function handleLive(act,el){
   return false}
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.5.2';
+const APP_VERSION='1.5.3';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
