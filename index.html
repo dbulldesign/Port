@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Port</title>
@@ -220,6 +220,7 @@ svg{display:block}
 /* sheets */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:50;padding-top:env(safe-area-inset-top,0px);animation:fadein .2s}
 .overlay[hidden]{display:none}
+.overlay{transition:height .18s ease-out}
 .sheet{background:var(--sheet);width:100%;max-height:calc(100% - 20px);border-radius:24px 24px 0 0;display:flex;flex-direction:column;box-shadow:var(--shadow);animation:up .4s var(--spring);will-change:transform}
 .sheet.closing{transition:transform .22s ease-in;transform:translateY(100%)}
 .grab{flex:none;height:18px;position:relative;cursor:grab;touch-action:none}
@@ -2650,8 +2651,22 @@ function handleLive(act,el){
   }
   return false}
 
+/* ---- keyboard: keep sheets inside the visible area above the on-screen keyboard (iOS scrolls the page instead of shrinking it) ---- */
+(function keyboardFit(){
+  const vv=window.visualViewport;if(!vv)return;let raf=0;
+  const fit=()=>{raf=0;const ov=$('#overlay');if(!ov||ov.hidden){document.documentElement.style.removeProperty('--kb');return}
+    const kb=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);
+    if(kb>40){ov.style.top=vv.offsetTop+'px';ov.style.height=vv.height+'px';ov.style.bottom='auto';document.documentElement.style.setProperty('--kb',kb+'px');
+      const a=document.activeElement;if(a&&a.closest&&a.closest('.sheet')&&a.matches('input,textarea'))setTimeout(()=>{try{a.scrollIntoView({block:'center',behavior:'smooth'})}catch(e){}},50)}
+    else{ov.style.top='';ov.style.height='';ov.style.bottom='';document.documentElement.style.removeProperty('--kb')}};
+  const ask=()=>{if(!raf)raf=requestAnimationFrame(fit)};
+  vv.addEventListener('resize',ask);vv.addEventListener('scroll',ask);
+  document.addEventListener('focusin',e=>{if(e.target.closest&&e.target.closest('.sheet'))setTimeout(ask,300)});
+  document.addEventListener('focusout',()=>setTimeout(ask,300));
+})();
+
 /* ---- version & updates ---- */
-const APP_VERSION='1.5.4';
+const APP_VERSION='1.5.5';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
