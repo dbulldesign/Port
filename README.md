@@ -26,7 +26,7 @@ Your plan now lives in a private gist (`port-sync.json`) in your GitHub account.
 
 On the connected device: Settings → Sync → **Add another device**. Scan the QR code with the other device's camera (or send yourself the link). That's it: it connects and pulls your plan.
 
-**iPhone / iPad with Port on the Home Screen:** the camera opens the link in Safari, and Safari keeps a separate copy from the Home Screen app. Instead, copy the link (or send it to yourself), open Port from the Home Screen, go to Settings → Sync and paste the link into the box, then tap Connect.
+**iPhone / iPad with Port on the Home Screen:** Safari and the Home Screen app keep separate copies, so connecting one doesn't connect the other. In Safari go to Settings → Sync → Add another device → **Copy link**, then open Port from the Home Screen, go to Settings → Sync and tap **Paste link from clipboard**. The Home Screen app also offers this the first time you open it unconnected.
 
 If sync has a problem, a message appears and the gear gets a red dot; Settings → Sync shows the details.
 
