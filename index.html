@@ -913,7 +913,8 @@ function initDb(){
   window.addEventListener('hashchange',handleSetupHash);
   setInterval(()=>{if(!document.hidden)runSync()},20000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)runSync()});
-  window.addEventListener('online',()=>runSync());window.addEventListener('focus',()=>runSync());
+  window.addEventListener('online',()=>{runSync();toast(secrets.token&&sync.gistId?'Back online. Syncing your changes':'Back online')});
+  window.addEventListener('offline',()=>{dbStatus=secrets.token&&sync.gistId?'offline':dbStatus;renderStatus();toast('You’re offline. Everything still works and is saved on this device')});window.addEventListener('focus',()=>runSync());
   if('serviceWorker'in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('./sw.js').then(reg=>{reg.addEventListener('updatefound',()=>{const w=reg.installing;w&&w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller)checkUpdate(false)})})}).catch(()=>{})}
 }
 function setupLink(){const j={t:secrets.token};
@@ -2400,7 +2401,7 @@ document.addEventListener('keydown',e=>{if(!e.target.matches||!e.target.matches(
   if(e.key==='Escape'){ui.projFilter='';e.target.value='';filterSidebar();e.target.blur()}});
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.3.2';
+const APP_VERSION='1.3.3';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);

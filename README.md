@@ -89,7 +89,7 @@ If you also rename the repository from `harbor` to `port`, the address changes t
 
 ## Notes
 
-- Every device keeps a full copy and works offline; changes merge when it's back online, newest edit wins per item.
+- **Works offline.** After you've opened Port once, it opens and works with no connection (including from the Home Screen or desktop icon). Everything you do is saved on the device straight away; when you're back online it syncs on its own, and the newest edit wins per item. A message tells you when you go offline and come back.
 - The device link contains your sync token: share it only with yourself.
 - Every sync is saved as a revision of the gist, so GitHub keeps a full history (open the gist → Revisions).
 - The version you're running is at the top of Settings. Port checks for a new version when it opens, when you come back to it, and every 30 minutes. When one is out, a "Version x.y.z is ready" bar appears with an **Update** button. You can also tap **Check** in Settings.
