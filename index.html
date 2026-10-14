@@ -1105,6 +1105,17 @@ const saveUi=()=>{try{localStorage.setItem(LS_KEY+':cal',ui.cal);localStorage.se
 const currentProject=()=>ui.pid!=='inbox'&&state.projects[ui.pid]||null;
 const projColor=()=>{const p=currentProject();return p?p.color:'#0A84FF'};
 const DH=96;
+/* spring the calendar card to a stop, starting with the finger's speed (px/ms) */
+function calAnimStop(){if(G.calAnim){cancelAnimationFrame(G.calAnim);G.calAnim=0}}
+function calSpringTo(el,best,v0){
+  calAnimStop();const pts=calPoints();const to=pts[best];const was=ui.cal;ui.cal=best;saveUi();
+  if(was==='min'&&best!=='min'){el.className='cal '+best+' resizing';el.style.height=(parseFloat(el.style.height)||el.offsetHeight)+'px';ui.scrolledToNow=false;scrollToNow()}else el.classList.add('resizing');
+  if(best!==was)haptic(6);
+  let x=parseFloat(el.style.height)||el.offsetHeight,v=(v0||0)*1000,last=performance.now();const k=190,c=2*Math.sqrt(k)*.86;
+  const step=now=>{const dt=Math.min(.04,(now-last)/1000);last=now;for(let i=0;i<4;i++){const h=dt/4;v+=(-k*(x-to)-c*v)*h;x+=v*h}
+    if(Math.abs(x-to)<.4&&Math.abs(v)<12){x=to;el.style.height=to+'px';el.className='cal '+best;G.calAnim=0;return}
+    el.style.height=x+'px';G.calAnim=requestAnimationFrame(step)};
+  G.calAnim=requestAnimationFrame(step)}
 function calHeight(){const H=($('#app')&&$('#app').clientHeight)||window.innerHeight;const pts={min:DH,half:Math.round(H*.47),full:Math.round(H-250)};return pts[ui.cal]||pts.half}
 function calPoints(){const H=($('#app')&&$('#app').clientHeight)||window.innerHeight;return{min:DH,half:Math.round(H*.47),full:Math.round(H-250)}}
 
@@ -1636,14 +1647,14 @@ function gestureMove(e){
   if(G.mode==='drag'){moveDrag(e);return}
   if(G.mode==='swipe'){moveSwipe(dx);return}
   if(G.mode==='sheet'){p.el.style.transition='none';p.el.style.transform=`translate3d(0,${dy>0?dy:dy*.15}px,0)`;const ov=$('#overlay');if(ov)ov.style.background=`rgba(0,0,0,${Math.max(.15,.5-Math.max(0,dy)/1200)})`;return}
-  if(G.mode==='calresize'){const pts=calPoints();p.el.classList.add('resizing');p.el.style.height=Math.max(pts.min,Math.min(pts.full+40,p.h0+dy))+'px';return}
+  if(G.mode==='calresize'){const pts=calPoints();let h=p.h0+dy;if(h<pts.min)h=pts.min-(pts.min-h)*.22;else if(h>pts.full)h=pts.full+(h-pts.full)*.22;p.el.style.height=h+'px';return}
   if(G.mode==='dayswipe'){const g=$('.tl-grid,.mgrid');if(g){g.style.transition='none';g.style.willChange='transform';g.style.transform=`translate3d(${dx}px,0,0)`;g.style.opacity=String(Math.max(.35,1-Math.abs(dx)/700))}return}
   if(G.mode==='slotdrag'){moveProvisional(slotTime(p.el,e.clientY-p.offset));return}
   if(G.mode==='draw'){const a=p.start,b=slotTime(p.el,e.clientY);const s=Math.min(a,b),d=Math.max(15,Math.abs(b-a));moveProvisional(s,d);return}
   if(G.mode==='projedit')return;
   const ad=Math.abs(dx),ady=Math.abs(dy);
   if(p.kind==='sheet'){if(dy>8&&ady>ad)G.mode='sheet';return}
-  if(p.kind==='dh'){if(ad<8&&ady<8)return;if(ady>ad)G.mode='calresize';else G.mode='dayswipe';clearTimeout(G.timer);return}
+  if(p.kind==='dh'){if(ad<8&&ady<8)return;if(ady>ad){G.mode='calresize';calAnimStop();p.el.classList.add('resizing');p.sy=e.clientY;p.h0=p.el.offsetHeight}else{G.mode='dayswipe';p.sx=e.clientX}clearTimeout(G.timer);return}
   if(p.kind==='proj'){if(ad>6||ady>6){clearTimeout(G.timer);G.pending=null}return}
   if(ad<7&&ady<7)return;
   if(p.kind==='mswipe'){if(ad>ady)G.mode='dayswipe';else G.pending=null;return}
@@ -1669,9 +1680,11 @@ function endGesture(e,cancelled){
   if(mode==='drag')endDrag(e,cancelled);
   else if(mode==='swipe')endSwipe(V.x);
   else if(mode==='sheet'){if(!cancelled&&(dy>110||(V.y>.5&&dy>30)))dismissSheet(V.y);else{p.el.style.transition='transform .45s cubic-bezier(.2,1,.3,1)';p.el.style.transform='';const ov=$('#overlay');if(ov)ov.style.background='';setTimeout(()=>{p.el.style.transition=''},460)}}
-  else if(mode==='calresize'){const pts=calPoints();const h=p.el.offsetHeight;let best='half',bd=1e9;for(const k in pts){const d=Math.abs(pts[k]-h);if(d<bd){bd=d;best=k}}
-    if(Math.abs(dy)>40||(Math.abs(V.y)>.35&&Math.abs(dy)>12)){if(dy>0&&best===ui.cal&&best!=='full')best=best==='min'?'half':'full';if(dy<0&&best===ui.cal&&best!=='min')best=best==='full'?'half':'min'}
-    ui.cal=best;saveUi();p.el.classList.remove('resizing');p.el.className='cal '+best;p.el.style.height=pts[best]+'px';haptic(6);G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300)}
+  else if(mode==='calresize'){const pts=calPoints();const h=parseFloat(p.el.style.height)||p.el.offsetHeight;const vy=cancelled?0:V.y;
+    /* where a flick would coast to, then the nearest stop to that */
+    const proj=h+vy*1000*.16;const order=['min','half','full'];let best=order.reduce((b,k)=>Math.abs(pts[k]-proj)<Math.abs(pts[b]-proj)?k:b,'half');
+    if(Math.abs(vy)>.5&&best===ui.cal){const i=order.indexOf(best)+(vy>0?1:-1);if(order[i])best=order[i]}
+    G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);calSpringTo(p.el,best,vy)}
   else if(mode==='dayswipe'){const g=$('.tl-grid,.mgrid');G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);
     const go=!cancelled&&(Math.abs(dx)>60||(Math.abs(V.x)>.4&&Math.abs(dx)>20));const fwd=go?(Math.abs(V.x)>.4?V.x<0:dx<0):false;
     if(go){if(g){g.style.transition='transform .17s cubic-bezier(.3,.7,.5,1),opacity .17s';g.style.transform=`translate3d(${(fwd?-1:1)*Math.round((g.offsetWidth||320)*.5)}px,0,0)`;g.style.opacity='0'}haptic(5);setTimeout(()=>setDate(stepDate(fwd?1:-1),fwd?'next':'prev'),160)}
@@ -2490,7 +2503,7 @@ function handleView(act,el){
   return false}
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.4.0';
+const APP_VERSION='1.4.1';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
@@ -2537,7 +2550,7 @@ setInterval(()=>{updateNowLine();checkNotify()},20000);
 let lastDay=todayYmd();
 setInterval(()=>{if(todayYmd()!==lastDay){lastDay=todayYmd();materialized.clear();syncRoutines();autoArchive();renderApp();autoRollover()}},60000);
 let wasWide=isWide(),wasSide=hasSidebar();
-window.addEventListener('resize',()=>{if(hasSidebar()!==wasSide&&isWide()===wasWide){wasSide=hasSidebar();renderApp()}if(isWide()!==wasWide){wasWide=isWide();wasSide=hasSidebar();closeAllSheets();renderApp()}else if(!isWide()){const c=$('.cal');if(c&&!G.mode)c.style.height=calHeight()+'px'}});
+window.addEventListener('resize',()=>{if(hasSidebar()!==wasSide&&isWide()===wasWide){wasSide=hasSidebar();renderApp()}if(isWide()!==wasWide){wasWide=isWide();wasSide=hasSidebar();closeAllSheets();renderApp()}else if(!isWide()){const c=$('.cal');if(c&&!G.mode&&!G.calAnim)c.style.height=calHeight()+'px'}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){scheduleRender();tickFocus()}});
 </script>
 </body>
