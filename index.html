@@ -627,6 +627,7 @@ svg{display:block}
 .block.focusing{animation:none;box-shadow:0 0 0 2px var(--c)}
 .block.focusing::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 16px color-mix(in srgb,var(--c) 60%,transparent);animation:breathe 2.6s ease-in-out infinite;will-change:opacity}
 .sheet{transform:translate3d(0,0,0)}
+.timeline,.todo-card,.sbody,.plist,.kanban,.projbar,.focusview .top{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 @media (hover:none){
   .pill,#toast,#updbar{-webkit-backdrop-filter:none;backdrop-filter:none}
   .pill:not(.live):not(.ai){background:rgba(44,44,46,.97)}
@@ -1105,6 +1106,14 @@ const saveUi=()=>{try{localStorage.setItem(LS_KEY+':cal',ui.cal);localStorage.se
 const currentProject=()=>ui.pid!=='inbox'&&state.projects[ui.pid]||null;
 const projColor=()=>{const p=currentProject();return p?p.color:'#0A84FF'};
 const DH=96;
+/* one spring for every gesture: starts with the finger's speed (px/s), settles at `to`, or stops early when `until` says so */
+function spring(o){let x=o.from,v=o.v0||0,last=performance.now(),id=0;const k=o.k||190,c=2*Math.sqrt(k)*(o.zeta??.86);
+  const step=now=>{const dt=Math.min(.04,(now-last)/1000);last=now;for(let i=0;i<4;i++){const h=dt/4;v+=(-k*(x-o.to)-c*v)*h;x+=v*h}
+    if(Math.abs(x-o.to)<.4&&Math.abs(v)<12){o.update(o.to,0);o.done&&o.done(o.to,0);return}
+    if(o.until&&o.until(x,v)){o.update(x,v);o.done&&o.done(x,v);return}
+    o.update(x,v);id=requestAnimationFrame(step)};
+  id=requestAnimationFrame(step);return{stop:()=>cancelAnimationFrame(id)}}
+const stopAnim=key=>{if(G[key]){G[key].stop();G[key]=null}};
 /* spring the calendar card to a stop, starting with the finger's speed (px/ms) */
 function calAnimStop(){if(G.calAnim){cancelAnimationFrame(G.calAnim);G.calAnim=0}}
 function calSpringTo(el,best,v0){
@@ -1299,7 +1308,10 @@ const sheetStack=[];
 function openSheet(fn){sheetStack.push(fn);drawSheet()}
 function closeSheet(){sheetStack.pop();if(sheetStack.length)drawSheet();else{$('#overlay').hidden=true;$('#overlay').innerHTML='';$('#toast').classList.remove('top')}}
 function closeAllSheets(){sheetStack.length=0;$('#overlay').hidden=true;$('#overlay').innerHTML='';$('#toast').classList.remove('top')}
-function dismissSheet(v=0){const s=$('.sheet');if(!s){closeSheet();return}const ov=$('#overlay');const wide=isWide();const ms=Math.round(Math.max(170,Math.min(300,260-v*60)));
+function dismissSheetFrom(el,y,vy){stopAnim('sheetAnim');const ov=$('#overlay');const H=el.offsetHeight+20;const fade=sheetStack.length<=1;el.style.transition='none';
+  G.sheetAnim=spring({from:y,to:H,v0:Math.max(vy,H*3.2),k:240,zeta:1,until:x=>x>=H-6,update:x=>{el.style.transform=`translate3d(0,${x}px,0)`;if(ov&&fade)ov.style.background=`rgba(0,0,0,${(.5*(1-x/H)).toFixed(3)})`},
+    done:()=>{G.sheetAnim=null;closeSheet();if(ov)ov.style.background=''}})}
+function dismissSheet(v=0){const s=$('.sheet');if(!s){closeSheet();return}if(!isWide()){dismissSheetFrom(s,0,(v||0)*1000);return}const ov=$('#overlay');const wide=true;const ms=Math.round(Math.max(170,Math.min(300,260-v*60)));
   s.style.transition=`transform ${ms}ms cubic-bezier(.2,.7,.3,1),opacity ${ms}ms`;s.style.transform=wide?'translate3d(0,30px,0)':'translate3d(0,100%,0)';if(wide)s.style.opacity='0';
   if(ov&&sheetStack.length<=1){ov.style.transition=`background ${ms}ms`;ov.style.background='rgba(0,0,0,0)'}
   setTimeout(()=>{closeSheet();if(ov){ov.style.transition='';ov.style.background=''}},ms)}
@@ -1648,12 +1660,12 @@ function gestureMove(e){
   if(G.mode==='swipe'){moveSwipe(dx);return}
   if(G.mode==='sheet'){p.el.style.transition='none';p.el.style.transform=`translate3d(0,${dy>0?dy:dy*.15}px,0)`;const ov=$('#overlay');if(ov)ov.style.background=`rgba(0,0,0,${Math.max(.15,.5-Math.max(0,dy)/1200)})`;return}
   if(G.mode==='calresize'){const pts=calPoints();let h=p.h0+dy;if(h<pts.min)h=pts.min-(pts.min-h)*.22;else if(h>pts.full)h=pts.full+(h-pts.full)*.22;p.el.style.height=h+'px';return}
-  if(G.mode==='dayswipe'){const g=$('.tl-grid,.mgrid');if(g){g.style.transition='none';g.style.willChange='transform';g.style.transform=`translate3d(${dx}px,0,0)`;g.style.opacity=String(Math.max(.35,1-Math.abs(dx)/700))}return}
+  if(G.mode==='dayswipe'){stopAnim('dayAnim');const g=$('.tl-grid,.mgrid');if(g){g.style.transition='none';g.style.willChange='transform';g.style.transform=`translate3d(${dx}px,0,0)`;g.style.opacity=String(Math.max(.35,1-Math.abs(dx)/700))}return}
   if(G.mode==='slotdrag'){moveProvisional(slotTime(p.el,e.clientY-p.offset));return}
   if(G.mode==='draw'){const a=p.start,b=slotTime(p.el,e.clientY);const s=Math.min(a,b),d=Math.max(15,Math.abs(b-a));moveProvisional(s,d);return}
   if(G.mode==='projedit')return;
   const ad=Math.abs(dx),ady=Math.abs(dy);
-  if(p.kind==='sheet'){if(dy>8&&ady>ad)G.mode='sheet';return}
+  if(p.kind==='sheet'){if(dy>8&&ady>ad){G.mode='sheet';stopAnim('sheetAnim');p.sy=e.clientY}return}
   if(p.kind==='dh'){if(ad<8&&ady<8)return;if(ady>ad){G.mode='calresize';calAnimStop();p.el.classList.add('resizing');p.sy=e.clientY;p.h0=p.el.offsetHeight}else{G.mode='dayswipe';p.sx=e.clientX}clearTimeout(G.timer);return}
   if(p.kind==='proj'){if(ad>6||ady>6){clearTimeout(G.timer);G.pending=null}return}
   if(ad<7&&ady<7)return;
@@ -1679,16 +1691,24 @@ function endGesture(e,cancelled){
   const dx=e?e.clientX-p.sx:0,dy=e?e.clientY-p.sy:0;const mode=G.mode;
   if(mode==='drag')endDrag(e,cancelled);
   else if(mode==='swipe')endSwipe(V.x);
-  else if(mode==='sheet'){if(!cancelled&&(dy>110||(V.y>.5&&dy>30)))dismissSheet(V.y);else{p.el.style.transition='transform .45s cubic-bezier(.2,1,.3,1)';p.el.style.transform='';const ov=$('#overlay');if(ov)ov.style.background='';setTimeout(()=>{p.el.style.transition=''},460)}}
+  else if(mode==='sheet'){const el=p.el,y=Math.max(0,dy),vy=cancelled?0:V.y*1000,ov=$('#overlay');
+    if(!cancelled&&(dy>110||(V.y>.5&&dy>30)))dismissSheetFrom(el,y,vy);
+    else{el.style.transition='none';G.sheetAnim=spring({from:y,to:0,v0:vy,k:210,zeta:.9,update:x=>{el.style.transform=`translate3d(0,${x}px,0)`;if(ov)ov.style.background=`rgba(0,0,0,${Math.max(.15,.5-Math.max(0,x)/1200)})`},done:()=>{el.style.transform='';el.style.transition='';if(ov)ov.style.background='';G.sheetAnim=null}})}}
   else if(mode==='calresize'){const pts=calPoints();const h=parseFloat(p.el.style.height)||p.el.offsetHeight;const vy=cancelled?0:V.y;
     /* where a flick would coast to, then the nearest stop to that */
     const proj=h+vy*1000*.16;const order=['min','half','full'];let best=order.reduce((b,k)=>Math.abs(pts[k]-proj)<Math.abs(pts[b]-proj)?k:b,'half');
     if(Math.abs(vy)>.5&&best===ui.cal){const i=order.indexOf(best)+(vy>0?1:-1);if(order[i])best=order[i]}
     G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);calSpringTo(p.el,best,vy)}
   else if(mode==='dayswipe'){const g=$('.tl-grid,.mgrid');G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);
-    const go=!cancelled&&(Math.abs(dx)>60||(Math.abs(V.x)>.4&&Math.abs(dx)>20));const fwd=go?(Math.abs(V.x)>.4?V.x<0:dx<0):false;
-    if(go){if(g){g.style.transition='transform .17s cubic-bezier(.3,.7,.5,1),opacity .17s';g.style.transform=`translate3d(${(fwd?-1:1)*Math.round((g.offsetWidth||320)*.5)}px,0,0)`;g.style.opacity='0'}haptic(5);setTimeout(()=>setDate(stepDate(fwd?1:-1),fwd?'next':'prev'),160)}
-    else if(g){g.style.transition='transform .45s cubic-bezier(.2,1,.3,1),opacity .3s';g.style.transform='';g.style.opacity='';setTimeout(()=>{g.style.willChange=''},460)}}
+    const go=!cancelled&&(Math.abs(dx)>60||(Math.abs(V.x)>.4&&Math.abs(dx)>20));const fwd=go?(Math.abs(V.x)>.4?V.x<0:dx<0):false;const vx=cancelled?0:V.x*1000;
+    if(!g){if(go)setDate(stepDate(fwd?1:-1),fwd?'next':'prev')}
+    else if(go){const W=(g.parentElement&&g.parentElement.clientWidth)||g.offsetWidth||320;const to=fwd?-W:W;haptic(5);
+      G.dayAnim=spring({from:dx,to,v0:fwd?Math.min(vx,-W*3.2):Math.max(vx,W*3.2),k:170,zeta:1,until:x=>Math.abs(x)>=W*.9,
+        update:x=>{g.style.transform=`translate3d(${x}px,0,0)`;g.style.opacity=String(Math.max(0,1-Math.abs(x)/W))},
+        done:(x,v)=>{setDate(stepDate(fwd?1:-1),'none');const g2=$('.tl-grid,.mgrid');if(!g2){G.dayAnim=null;return}const from=fwd?W:-W;g2.style.transition='none';g2.style.willChange='transform';
+          G.dayAnim=spring({from,to:0,v0:fwd?Math.min(v,-W*3.2):Math.max(v,W*3.2),k:230,zeta:1,update:y=>{g2.style.transform=`translate3d(${y}px,0,0)`;g2.style.opacity=String(Math.max(.15,1-Math.abs(y)/W))},
+            done:()=>{g2.style.transform='';g2.style.opacity='';g2.style.willChange='';g2.style.transition='';G.dayAnim=null}})}})}
+    else G.dayAnim=spring({from:dx,to:0,v0:vx,k:190,zeta:.9,update:x=>{g.style.transform=`translate3d(${x}px,0,0)`;g.style.opacity=String(Math.max(.35,1-Math.abs(x)/700))},done:()=>{g.style.transform='';g.style.opacity='';g.style.willChange='';G.dayAnim=null}})}
   else if(mode==='slotdrag'||mode==='draw'){G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);if(cancelled)cancelProvisional();else focusProvisional()}
   else if(mode==='projedit'){G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300)}
   else if(p.kind==='slot'&&!cancelled&&Math.abs(dx)<7&&Math.abs(dy)<7){G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);createProvisional(p.el,p.start);focusProvisional()}
@@ -1704,11 +1724,13 @@ document.addEventListener('contextmenu',e=>{if(e.target.closest('.task,.block,.p
 function startSwipe(row){closeSwipe();SW.cur={row,inner:row.querySelector('.inner'),dx:0};SW.cur.inner.classList.add('noanim');SW.cur.inner.style.willChange='transform'}
 const rubber=(x,lim)=>Math.abs(x)<=lim?x:Math.sign(x)*(lim+(Math.abs(x)-lim)*.3);
 function moveSwipe(dx){const s=SW.cur;if(!s)return;const x=dx>0?rubber(dx,110):rubber(dx,210);const was=s.row.classList.contains('armed');s.dx=x;s.inner.style.transform=`translate3d(${x}px,0,0)`;const armed=x>72;s.row.classList.toggle('armed',armed);if(armed&&!was)haptic(6)}
-function endSwipe(vx=0){const s=SW.cur;if(!s)return;s.inner.classList.remove('noanim');G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);const inner=s.inner;setTimeout(()=>{inner.style.willChange=''},450);
-  if(s.dx>72||(vx>.45&&s.dx>28)){s.inner.style.transform='';s.row.classList.remove('armed');toggleTask(s.row.dataset.task)}
-  else if(s.dx<-200){s.inner.style.transform='translateX(-110%)';setTimeout(()=>deleteTask(s.row.dataset.task),120)}
-  else if(s.dx<-70||(vx<-.45&&s.dx<-28)){s.inner.style.transform='translate3d(-160px,0,0)';SW.open=s.row}
-  else{s.inner.style.transform='';s.row.classList.remove('armed')}SW.cur=null}
+function settleSwipe(s,to,vx){const inner=s.inner;inner.classList.add('noanim');
+  spring({from:s.dx,to,v0:vx*1000,k:260,zeta:.9,update:x=>{inner.style.transform=`translate3d(${x}px,0,0)`},done:()=>{inner.classList.remove('noanim');inner.style.willChange='';if(to===0)inner.style.transform=''}})}
+function endSwipe(vx=0){const s=SW.cur;if(!s)return;G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);
+  if(s.dx>72||(vx>.45&&s.dx>28)){s.row.classList.remove('armed');settleSwipe(s,0,vx);toggleTask(s.row.dataset.task)}
+  else if(s.dx<-200){settleSwipe(s,-s.row.offsetWidth*1.1,Math.min(vx,-1.2));setTimeout(()=>deleteTask(s.row.dataset.task),140)}
+  else if(s.dx<-70||(vx<-.45&&s.dx<-28)){settleSwipe(s,-160,vx);SW.open=s.row}
+  else{s.row.classList.remove('armed');settleSwipe(s,0,vx)}SW.cur=null}
 
 /* hold and carry */
 function liftDrag(){
@@ -2503,7 +2525,7 @@ function handleView(act,el){
   return false}
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.4.1';
+const APP_VERSION='1.4.2';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
