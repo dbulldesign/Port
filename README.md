@@ -47,6 +47,13 @@ Preferences (focus hours, buffer, breaks, lunch) are in Settings → Scheduling.
 - New projects get a colour no other project uses, and an icon guessed from the name ("Tavern on the Green" gets a fork and knife, "Gym" a dumbbell, "Taxes" a coin). If nothing in the name fits, the icon is picked at random from the ones not used yet. You can always change either.
 - On a wide screen (desktop, iPad landscape) projects are listed in a sidebar with a **Find a project** box: type a few letters and press Enter to jump to the first match. Press `g` to get to the box from anywhere.
 
+## Calendar views
+
+- **Phone:** the **D / W / M** switch at the top left of the calendar shows a day, the whole week, or the month. Swipe sideways to move by a day, a week or a month.
+- **Desktop / iPad:** next to 1 / 3 / 5 days there are **Week** and **Month**; the arrows move by the same amount.
+- Tap a day (in the week header or a month square) to open that day. In Month, coloured dots (or titles on a wide screen) are blocks and calendar events; the small blue number is how many to dos are due. Drag a to do onto a month day to plan it for that day.
+- Keyboard: `d`, `w`, `m` switch views; `←` `→` move.
+
 ## Daily flow
 
 - **Plan your day** (banner each morning, or `p`): review what slipped, pick from the backlog, size each to do, set an intention, then smart-schedule it.

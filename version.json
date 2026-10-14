@@ -1,4 +1,4 @@
 {
-  "version": "1.3.4",
-  "notes": "Sync retries calmly with no connection and catches up as soon as it is back"
+  "version": "1.4.0",
+  "notes": "Week and month calendar views"
 }
