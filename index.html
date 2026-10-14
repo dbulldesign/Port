@@ -1375,8 +1375,8 @@ function blockEditor(init,withCb){return()=>{
     <div class="card"><div class="frow big"><input name="title" value="${esc(v.title)}" placeholder="What is this time for?" required ${b?'':'autofocus'} autocomplete="off" aria-label="Block title"></div></div>
     <div class="card" style="margin-top:14px">
       <div class="frow"><label>Day</label><input type="date" name="date" value="${v.date}" required></div>
-      <div class="frow"><label>Starts</label><input type="time" name="start" value="${toHM(v.start)}" step="300" required></div>
-      <div class="frow" style="display:block"><label style="display:block;margin-bottom:8px">Duration</label><div class="chips" style="padding:0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${durs.map(d=>`<button type="button" class="chip ${v.duration===d?'on':''}" data-act="chip:set" data-name="duration" data-value="${d}">${fmtDur(d)}</button>`).join('')}<input type="number" name="durationCustom" min="5" max="1440" step="5" placeholder="min" value="${durs.includes(v.duration)?'':v.duration}" aria-label="Custom minutes" style="width:70px;flex:none;background:var(--fill);border:0;border-radius:999px;padding:7px 12px;font-size:15px"></div><input type="hidden" name="duration" value="${v.duration}"></div>
+      <div class="frow"><label>Starts</label><input type="time" name="start" value="${toHM(v.start)}" step="60" required></div>
+      <div class="frow" style="display:block"><label style="display:block;margin-bottom:8px">Duration</label><div class="chips" style="padding:0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${durs.map(d=>`<button type="button" class="chip ${v.duration===d?'on':''}" data-act="chip:set" data-name="duration" data-value="${d}">${fmtDur(d)}</button>`).join('')}<input type="number" name="durationCustom" min="1" max="1440" step="1" placeholder="min" value="${durs.includes(v.duration)?'':v.duration}" aria-label="Custom minutes" style="width:70px;flex:none;background:var(--fill);border:0;border-radius:999px;padding:7px 12px;font-size:15px"></div><input type="hidden" name="duration" value="${v.duration}"></div>
       <div class="frow"><label>Repeat</label><select name="repeat" data-act="repeat:change">${[['none','Never'],['daily','Every day'],['weekdays','Weekdays'],['weekends','Weekends'],['custom','Choose days']].map(([k,l])=>`<option value="${k}" ${repeat===k?'selected':''}>${l}</option>`).join('')}</select></div>
       <div class="frow" id="dayToggles" style="display:${repeat==='custom'?'flex':'none'}"><div class="chips" style="padding:0;width:100%;justify-content:space-between">${WD.map((d,i)=>`<button type="button" class="chip ${days.includes(i)?'on':''}" data-act="chip:toggle" data-name="days" data-value="${i}" style="padding:7px 0;width:38px;justify-content:center">${d[0]}</button>`).join('')}</div><input type="hidden" name="days" value="${days.join(',')}"></div>
       ${r?`<div class="frow"><label>Apply to</label><div class="seg"><button type="button" class="on" data-act="chip:set" data-name="scope" data-value="one">This block</button><button type="button" data-act="chip:set" data-name="scope" data-value="future">All future</button></div><input type="hidden" name="scope" value="one"></div>`:''}
@@ -1494,7 +1494,7 @@ function createBlock(o){const id=uid('b');(ui.freshBlocks=ui.freshBlocks||[]).pu
 function saveBlockForm(f){
   const d=readForm(f);const id=f.dataset.id;const b=id?state.blocks[id]:null;
   const title=(d.title||'').trim();if(!title)return;
-  let duration=parseInt(d.durationCustom)||parseInt(d.duration)||60;duration=Math.max(5,Math.min(1440,duration));
+  let duration=parseInt(d.durationCustom)||parseInt(d.duration)||60;duration=Math.max(1,Math.min(1440,duration));
   const start=fromHM(d.start);const date=d.date||ui.date;const projectId=d.projectId||null;const icon=d.icon||null;const mode=d.repeat||'none';
   const daysFor={daily:[0,1,2,3,4,5,6],weekdays:[1,2,3,4,5],weekends:[0,6],custom:(d.days||'').split(',').filter(x=>x!=='').map(Number)}[mode]||[];
   let newId=id;
@@ -2619,7 +2619,7 @@ function handleLive(act,el){
   return false}
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.5.1';
+const APP_VERSION='1.5.2';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);

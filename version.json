@@ -1,4 +1,4 @@
 {
-  "version": "1.5.1",
-  "notes": "Tap the calendar to start the timer, hold to add a block"
+  "version": "1.5.2",
+  "notes": "Blocks that start or last an odd number of minutes can be edited and saved"
 }
