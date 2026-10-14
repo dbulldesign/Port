@@ -44,6 +44,7 @@ Preferences (focus hours, buffer, breaks, lunch) are in Settings → Scheduling.
 
 ## Projects
 
+- Wherever you pick a project (a to do's details, a block, the timer's "What was that for?"), **+ New** lets you type a name and makes the project on the spot. In a to do, `@Name` does the same.
 - New projects get a colour no other project uses, and an icon guessed from the name ("Tavern on the Green" gets a fork and knife, "Gym" a dumbbell, "Taxes" a coin). If nothing in the name fits, the icon is picked at random from the ones not used yet. You can always change either.
 - On a wide screen (desktop, iPad landscape) projects are listed in a sidebar with a **Find a project** box: type a few letters and press Enter to jump to the first match. Press `g` to get to the box from anywhere.
 

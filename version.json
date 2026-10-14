@@ -1,4 +1,4 @@
 {
-  "version": "1.5.3",
-  "notes": "Finished timers show their end time, which you can edit; blocks have an Ends field"
+  "version": "1.5.4",
+  "notes": "Make a new project right inside a to do, block or timer"
 }

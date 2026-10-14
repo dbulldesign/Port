@@ -256,6 +256,8 @@ svg{display:block}
 .chip{flex:none;padding:7px 13px;border-radius:999px;background:var(--fill);font-size:15px;font-weight:500;color:var(--label);display:inline-flex;align-items:center;gap:6px;transition:background .15s,color .15s}
 .chip.on{background:var(--tint);color:#fff}
 .chip.on .pdot{box-shadow:0 0 0 1.5px #fff}
+.chip.newproj{color:var(--tint);background:none;box-shadow:inset 0 0 0 1.5px var(--fill)}
+.chip.newproj-input{min-width:150px;max-width:220px;background:var(--fill);border:0;outline:none;color:var(--label);box-shadow:inset 0 0 0 1.5px var(--tint)}
 .seg{display:flex;background:var(--fill);border-radius:9px;padding:2px;margin-left:auto}
 .seg button{padding:5px 12px;border-radius:7px;font-size:14px;font-weight:500;color:var(--label);transition:background .15s}
 .seg button.on{background:var(--card2);box-shadow:0 1px 4px rgba(0,0,0,.3);font-weight:600}
@@ -1350,7 +1352,20 @@ function refreshSheet(){
 }
 const snav=(title,left,right)=>`<div class="snav">${left?`<button class="l" data-act="${left.act}" ${left.id?`data-id="${left.id}"`:''}>${left.label}</button>`:'<span></span>'}<h2>${title}</h2>${right?`<button class="r" data-act="${right.act}" ${right.id?`data-id="${right.id}"`:''} ${right.form?`form="${right.form}" type="submit"`:''}>${right.label}</button>`:'<span></span>'}</div>`;
 const projectChips=(sel,name='projectId')=>{const ps=Object.values(state.projects).sort((a,c)=>a.name.localeCompare(c.name));
-  return`<div class="chips scroll-x"><button type="button" class="chip ${!sel?'on':''}" data-act="chip:set" data-name="${name}" data-value="">Inbox</button>${ps.map(p=>`<button type="button" class="chip ${sel===p.id?'on':''}" data-act="chip:set" data-name="${name}" data-value="${p.id}"><i class="pdot" style="background:${p.color}"></i>${esc(p.name)}</button>`).join('')}</div><input type="hidden" name="${name}" value="${sel||''}">`};
+  return`<div class="chips scroll-x"><button type="button" class="chip ${!sel?'on':''}" data-act="chip:set" data-name="${name}" data-value="">Inbox</button>${ps.map(p=>`<button type="button" class="chip ${sel===p.id?'on':''}" data-act="chip:set" data-name="${name}" data-value="${p.id}"><i class="pdot" style="background:${p.color}"></i>${esc(p.name)}</button>`).join('')}<button type="button" class="chip newproj" data-act="proj:inlineNew" data-name="${name}">+ New</button></div><input type="hidden" name="${name}" value="${sel||''}">`};
+/* "+ New" in a project picker: type a name in place, Enter makes the project and selects it */
+function inlineNewProject(btn){const name=btn.dataset.name;const inp=document.createElement('input');inp.className='chip newproj-input';inp.placeholder='Project name';inp.setAttribute('aria-label','New project name');inp.autocomplete='off';inp.dataset.name=name;
+  btn.replaceWith(inp);try{inp.focus({preventScroll:true})}catch(e){}inp.scrollIntoView({inline:'nearest',block:'nearest'});
+  const restore=()=>{const b=document.createElement('button');b.type='button';b.className='chip newproj';b.dataset.act='proj:inlineNew';b.dataset.name=name;b.textContent='+ New';inp.replaceWith(b)};
+  const commit=()=>{const v=inp.value.trim();if(!v){restore();return}const existed=Object.values(state.projects).some(p=>p.name.toLowerCase()===v.toLowerCase());const p=findOrCreateProject(v);
+    const wrap=inp.parentElement;const f=inp.closest('form')||inp.closest('.sbody');restore();
+    let chip=wrap.querySelector(`[data-name="${name}"][data-value="${p.id}"]`);
+    if(!chip){chip=document.createElement('button');chip.type='button';chip.className='chip';chip.dataset.act='chip:set';chip.dataset.name=name;chip.dataset.value=p.id;chip.innerHTML=`<i class="pdot" style="background:${p.color}"></i>${esc(p.name)}`;wrap.insertBefore(chip,wrap.querySelector('.newproj'))}
+    $$(`[data-name="${name}"]`,f||wrap).forEach(c=>c.classList.toggle('on',c===chip));const hid=(f||wrap.parentElement).querySelector(`input[name="${name}"]`);if(hid)hid.value=p.id;
+    const grid=f&&f.querySelector('.icongrid');if(grid)grid.style.setProperty('--c',p.color);
+    haptic(6);renderApp();toast(existed?'Picked '+p.name:'Project “'+p.name+'” added');chip.scrollIntoView({inline:'nearest',block:'nearest'})};
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();e.stopPropagation();commit()}else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();restore()}});
+  inp.addEventListener('blur',()=>setTimeout(()=>{if(inp.isConnected)commit()},120));}
 const iconGrid=(sel,color,name='icon',allowNone)=>`<div class="icongrid" style="${cvars(color)}">${allowNone?`<button type="button" class="${!sel?'on':''}" data-act="chip:set" data-name="${name}" data-value="" style="font-size:11px;font-weight:600">Auto</button>`:''}${ICON_KEYS.map(k=>`<button type="button" class="${sel===k?'on':''}" data-act="chip:set" data-name="${name}" data-value="${k}" aria-label="${k}">${ico(k,2)}</button>`).join('')}</div><input type="hidden" name="${name}" value="${sel||''}">`;
 const urgencySlider=u=>`<div class="slider-row"><div class="top"><span>How much it matters</span><b id="urgLabel">${['Normal','Low','Medium','High'][u]}</b></div>
   <div class="uslider" style="--p:${[12,38,63,88][u]}%"><div class="fillbar"></div><div class="marks"><span class="dot"></span><span>!</span><span>!!</span><span>!!!</span></div><div class="knob"></div><input type="range" name="urgency" min="0" max="3" value="${u}" data-act="urgency:input" aria-label="Urgency"></div></div>`;
@@ -1625,6 +1640,7 @@ function handle(act,el,e){
     case'done:clearHere':{const l=tasksOfCurrent().filter(t=>t.done);closeAllSheets();if(!l.length){toast('Nothing completed here');break}l.forEach(t=>put('tasks',t.id,null));renderApp();toast(`Cleared ${l.length} completed`);break}
     case'sheet:close':dismissSheet();break;
     case'confirm:do':{const b=confirmCb&&confirmCb[+el.dataset.i];closeSheet();if(b&&b.fn)b.fn();break}
+    case'proj:inlineNew':inlineNewProject(el);break;
     case'chip:set':{const f=el.closest('form')||el.closest('.sbody');const inp=f.querySelector(`input[name="${el.dataset.name}"]`);if(inp)inp.value=el.dataset.value;
       $$(`[data-name="${el.dataset.name}"]`,f).forEach(c=>c.classList.toggle('on',c===el));haptic(4);
       if(el.dataset.name==='duration'){const c=f.querySelector('input[name=durationCustom]');if(c)c.value='';syncBlockTimes(f,'duration')}
@@ -2635,7 +2651,7 @@ function handleLive(act,el){
   return false}
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.5.3';
+const APP_VERSION='1.5.4';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
