@@ -1,4 +1,4 @@
 {
-  "version": "1.6.1",
-  "notes": "Drag events between days in Month view, stretch a block from its bottom edge, ghost follows across week columns"
+  "version": "1.6.2",
+  "notes": "Focus (was Anchor in) and a new Anchor in that locks a block against rescheduling"
 }

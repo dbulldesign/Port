@@ -637,6 +637,10 @@ svg{display:block}
   #toast,#updbar{background:rgba(44,44,46,.98)}
 }
 
+/* ---- anchored blocks ---- */
+.block .anch{display:inline-grid;place-items:center;width:15px;height:15px;margin-right:4px;vertical-align:-2px;color:var(--cal-ink2)}
+.block .anch svg{width:12px;height:12px}
+.btn.anchored{background:color-mix(in srgb,var(--c,var(--tint)) 22%,transparent);color:var(--label)}
 /* ---- moving and stretching events ---- */
 .block:not(.ext):not(.live):not(.preview):not(.provisional)::before{content:"";position:absolute;left:0;right:0;bottom:0;height:16px;cursor:ns-resize}
 @media (hover:hover){.block:not(.ext):not(.live):hover::before{background:linear-gradient(to top,color-mix(in srgb,var(--c) 35%,transparent),transparent)}}
@@ -1282,7 +1286,7 @@ function dayColHtml(date){
       lis='<ul>'+show.map(x=>`<li class="${x.done?'done':''}"><i></i>${esc(x.title)}</li>`).join('')+(more>0?`<li class="more"><i></i>${more} more</li>`:'')+'</ul>'}
     const meta=tasks.length?(open?`${open} scheduled task${open===1?'':'s'}`:`${tasks.length} done`):'';
     return`<div class="block ${past?'past':''} ${b.live&&date===t?'live':''} ${cur&&cur.id===b.id&&!b.live?'focusing':''} ${ui.freshBlock===b.id||(ui.freshBlocks||[]).includes(b.id)?'fresh':''} ${clash.has(b.id)?'clash':''}" role="button" tabindex="0" data-act="block:open" data-id="${b.id}" style="animation-delay:${Math.max(0,(ui.freshBlocks||[]).indexOf(b.id))*70}ms;top:${top}px;height:${h}px;left:calc(${left}% + 4px);width:calc(${w}% - 8px);${cvars(col)}">
-      <div class="bh"><span class="bic">${ico(blockIcon(b),2.2)}</span><span class="bt">${esc(b.live&&b.untitled?'Timer running':b.title)}</span><span class="bd">${b.live&&date===t?`<span class="trun tabular" data-start="${b.liveStart}">${fmtClock(liveElapsedSec(b))}</span>`:(clash.has(b.id)?'⚠ ':'')+fmtDur(b.duration)}</span></div>
+      <div class="bh"><span class="bic">${ico(blockIcon(b),2.2)}</span><span class="bt">${b.anchored?`<span class="anch" title="Anchored">${ico('anchor',2.4)}</span>`:''}${esc(b.live&&b.untitled?'Timer running':b.title)}</span><span class="bd">${b.live&&date===t?`<span class="trun tabular" data-start="${b.liveStart}">${fmtClock(liveElapsedSec(b))}</span>`:(clash.has(b.id)?'⚠ ':'')+fmtDur(b.duration)}</span></div>
       ${h>=52&&meta?`<div class="bm">${meta}</div>`:''}${lis}</div>`;
   }).join('');
   const exts=timed.map(x=>{const L=lanes[x.id];const s=Math.max(x.start,hs),e=Math.min(x.start+x.duration,he);if(e<=s)return'';const top=(s-hs)/60*hh;const h=Math.max(24,(e-s)/60*hh-4);const w=100/L.lanes;
@@ -1351,7 +1355,7 @@ function focusBlock(){if(ui.focusBlockId){const b=state.blocks[ui.focusBlockId];
 function focusHtml(){
   const b=focusBlock();
   if(!b&&ui.focusMode==='pomo')return`<div class="focusview" style="--c:#FF453A"><div class="top">${focusModes()}${pomoHtml()}</div><button class="btn" data-act="focus:close">Back</button></div>`;
-  if(!b){const nx=nextBlock();return`<div class="focusview" style="--c:#8E8E93"><div class="top">${focusModes()}<div class="kicker">Nothing scheduled right now</div><div class="big" style="font-size:34px;letter-spacing:-1px;color:var(--label2)">${nx?'Up next: '+esc(nx.title)+' at '+fmtTimeShort(nx.start):'Free for the rest of the day'}</div></div>${nx?`<button class="btn" data-act="block:focus" data-id="${nx.id}">Anchor in to ${esc(nx.title)}</button>`:''}<button class="btn" data-act="focus:close" style="margin-top:10px">Back</button></div>`}
+  if(!b){const nx=nextBlock();return`<div class="focusview" style="--c:#8E8E93"><div class="top">${focusModes()}<div class="kicker">Nothing scheduled right now</div><div class="big" style="font-size:34px;letter-spacing:-1px;color:var(--label2)">${nx?'Up next: '+esc(nx.title)+' at '+fmtTimeShort(nx.start):'Free for the rest of the day'}</div></div>${nx?`<button class="btn" data-act="block:focus" data-id="${nx.id}">Focus on ${esc(nx.title)}</button>`:''}<button class="btn" data-act="focus:close" style="margin-top:10px">Back</button></div>`}
   const col=colorOf(b.projectId);const tasks=tasksIn(b.id);const left=tasks.filter(x=>!x.done).length;
   return`<div class="focusview" style="${cvars(col)}">
     <div class="top">${focusModes()}<div class="kicker"><span class="bic">${ico(blockIcon(b),2.2)}</span>${esc(b.title)}</div>${ui.focusMode==='pomo'?pomoHtml():`<div class="big" id="cd">–</div><div class="sub" id="cl"></div><div class="bar"><i id="prog"></i></div>`}
@@ -1424,7 +1428,8 @@ function blockSheet(id){return()=>{
     ${(b.fromTimer||b.liveTask)&&!b.live?`<div class="card" style="margin-bottom:14px"><button class="frow" data-act="block:edit" data-id="${id}" style="width:100%"><label style="min-width:0;flex:1">Timer<small style="display:block;font-size:13px;color:var(--label2)">Started ${fmtTimeShort(b.start)}, ended ${fmtTimeShort(blockEnd(b))} · ${fmtDur(b.duration)}</small></label><span class="val" style="flex:none;color:var(--tint)">Edit end</span>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>`:''}
     <div class="card" style="padding:8px 0 4px"><div class="todo-h" style="padding-left:20px"><span class="dotted"></span>Tasks</div><ul class="list">${tasks.map((t,i)=>taskRow(t,{i})).join('')||`<div class="empty" style="padding-top:6px">Nothing scheduled yet. Add a to do below${isWide()?', or drag one in':', or hold one in the list and carry it here'}.</div>`}</ul>
       ${ui.adding&&ui.adding.kind==='block'&&ui.adding.id===id?`<div class="newrow" style="padding-left:20px"><span class="plus">${I.plus}</span><input class="newinput" placeholder="New To Do" aria-label="New to do" autocomplete="off" enterkeyhint="done" data-act="new:text" autofocus></div>`:`<button class="newrow ${tasks.length?'':'dim'}" style="padding-left:20px" data-act="todo:newInBlock" data-id="${id}"><span class="plus">${I.plus}</span>New To Do</button>`}</div>
-    <div class="btnrow">${b.live?`<button class="btn primary" data-act="live:stop" style="--c:#FF453A">Stop timer · <span class="trun tabular" data-start="${b.liveStart}">${fmtClock(liveElapsedSec(b))}</span></button>`:b.date===todayYmd()&&blockEnd(b)>nowMin()?`<button class="btn primary" data-act="live:startBlock" data-id="${id}">${I.play.replace('<svg','<svg style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:4px"')}Start timer</button>`:''}<button class="btn ${b.live||!(b.date===todayYmd()&&blockEnd(b)>nowMin())?'primary':''}" data-act="block:focus" data-id="${id}">Anchor in</button>${left?`<button class="btn" data-act="focus:moveLeft" data-id="${id}">Move what’s left</button>`:''}</div>
+    <div class="btnrow">${b.live?`<button class="btn primary" data-act="live:stop" style="--c:#FF453A">Stop timer · <span class="trun tabular" data-start="${b.liveStart}">${fmtClock(liveElapsedSec(b))}</span></button>`:b.date===todayYmd()&&blockEnd(b)>nowMin()?`<button class="btn primary" data-act="live:startBlock" data-id="${id}">${I.play.replace('<svg','<svg style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:4px"')}Start timer</button>`:''}<button class="btn ${b.live||!(b.date===todayYmd()&&blockEnd(b)>nowMin())?'primary':''}" data-act="block:focus" data-id="${id}">Focus</button><button class="btn ${b.anchored?'anchored':''}" data-act="block:anchor" data-id="${id}" aria-pressed="${!!b.anchored}">${ico('anchor',2.2).replace('<svg','<svg style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:5px"')}${b.anchored?'Anchored':'Anchor in'}</button>${left?`<button class="btn" data-act="focus:moveLeft" data-id="${id}">Move what’s left</button>`:''}</div>
+    ${b.anchored?`<div class="fnote" style="padding-top:10px">Anchored: the timer, “Push the rest of today”, “Fix overlaps” and smart scheduling won’t move this block. You still can, by dragging it.</div>`:''}
     ${b.untitled&&!b.live?`<div class="card" style="margin-top:14px"><button class="frow" data-act="live:nameOpen" data-id="${id}" style="width:100%"><label style="min-width:0;flex:1;color:var(--tint)">What was this time for?</label>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>`:''}
     <div class="card" style="margin-top:14px"><button class="frow" data-act="block:delete" data-id="${id}" style="width:100%;justify-content:center;color:var(--red);font-weight:500">Delete block</button></div>
   </div>`;
@@ -1702,6 +1707,7 @@ function handle(act,el,e){
     case'block:delete':{const b=state.blocks[id];if(!b)return;const n=tasksIn(id).length;const msg=n?`${n} to do${n===1?'':'s'} will go back to the list.`:'';
       const buttons=b.routineId?[{label:'Delete only this one',cls:'danger',fn:()=>{deleteBlock(id,'one');closeAllSheets();renderApp()}},{label:'Delete this and future ones',cls:'danger',fn:()=>{deleteBlock(id,'future');closeAllSheets();renderApp()}}]:[{label:'Delete block',cls:'danger',fn:()=>{deleteBlock(id,'one');closeAllSheets();renderApp()}}];
       confirmAction('Delete “'+b.title+'”?',msg,buttons);break}
+    case'block:anchor':{const b=state.blocks[id];if(!b)break;put('blocks',id,{...b,anchored:!b.anchored});haptic(8);renderApp();refreshSheet();toast(state.blocks[id].anchored?`“${b.title}” is anchored: nothing will reschedule it`:`“${b.title}” can move again`);break}
     case'block:focus':ui.focusBlockId=id;ui.focus=true;ui.adding=null;closeAllSheets();haptic();lastCd='';renderApp();break;
     case'focus:open':ui.focusBlockId=null;ui.focus=true;ui.adding=null;lastCd='';renderApp();break;
     case'focus:close':ui.focus=false;ui.focusBlockId=null;ui.adding=null;renderApp();break;
@@ -1981,13 +1987,17 @@ function findSheet(id){return()=>{const t=state.tasks[id];if(!t)return`${snav('F
 PI.calendar='<rect x="3" y="4.5" width="18" height="16" rx="3.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>';
 
 /* running late, conflicts, quick blocks, free time */
-function pushRest(m){const t=todayYmd();const n=nowMin();const cur=currentBlock();const list=blocksOn(t).filter(b=>b.start>=n&&(!cur||b.id!==cur.id));if(!list.length&&!cur)return 0;const snap=snapshotState();
-  list.forEach(b=>put('blocks',b.id,{...b,start:Math.min(1425,b.start+m)}));if(cur)put('blocks',cur.id,{...cur,duration:cur.duration+m});renderApp();
+/* anchored blocks never move by themselves; a block being pushed slides past them instead of onto them */
+const movable=b=>!b.anchored&&!b.live;
+function pastAnchors(date,start,dur,skipId){const p=P();const anchors=blocksOn(date).filter(x=>x.anchored&&x.id!==skipId).sort((a,b)=>a.start-b.start);let s=start,guard=0;
+  for(let i=0;i<anchors.length&&guard<50;i++,guard++){const a=anchors[i];if(s<blockEnd(a)&&s+dur>a.start){s=Math.ceil((blockEnd(a)+p.buffer)/5)*5;i=-1}}return s}
+function pushRest(m){const t=todayYmd();const n=nowMin();const cur=currentBlock();const list=blocksOn(t).filter(b=>b.start>=n&&(!cur||b.id!==cur.id)&&movable(b));if(!list.length&&!cur)return 0;const snap=snapshotState();
+  list.forEach(b=>put('blocks',b.id,{...b,start:pastAnchors(t,Math.min(1425,b.start+m),b.duration,b.id)}));if(cur&&movable(cur))put('blocks',cur.id,{...cur,duration:cur.duration+m});renderApp();
   toast(`Pushed ${list.length+(cur?1:0)} block${list.length+(cur?1:0)===1?'':'s'} by ${fmtDur(m)}`,{label:'Undo',fn:()=>restoreSnapshot(snap)});return 1}
 function conflictsOn(date){const bl=blocksOn(date);const ids=new Set();for(let i=0;i<bl.length;i++)for(let j=i+1;j<bl.length;j++)if(bl[j].start<blockEnd(bl[i])&&bl[i].start<blockEnd(bl[j])){ids.add(bl[i].id);ids.add(bl[j].id)}return ids}
 function fixConflicts(date){const p=P();const t=todayYmd();const bl=blocksOn(date).sort((a,b)=>a.start-b.start||(a.createdAt||0)-(b.createdAt||0));let end=-1,moved=0;const snap=snapshotState();
-  for(const b of bl){const movable=date>t||(date===t&&b.start>=nowMin());if(end>b.start&&movable){const ns=Math.min(1425,Math.ceil((end+p.buffer)/5)*5);put('blocks',b.id,{...state.blocks[b.id],start:ns});moved++;end=ns+b.duration}else end=Math.max(end,blockEnd(b))}
-  renderApp();if(moved)toast(`Moved ${moved} block${moved===1?'':'s'} so nothing overlaps`,{label:'Undo',fn:()=>restoreSnapshot(snap)});else toast('Overlaps are in blocks that already started');return moved}
+  for(const b of bl){const can=(date>t||(date===t&&b.start>=nowMin()))&&movable(b);if(end>b.start&&can){const ns=pastAnchors(date,Math.min(1425,Math.ceil((end+p.buffer)/5)*5),b.duration,b.id);put('blocks',b.id,{...state.blocks[b.id],start:ns});moved++;end=ns+b.duration}else end=Math.max(end,blockEnd(b))}
+  renderApp();if(moved)toast(`Moved ${moved} block${moved===1?'':'s'} so nothing overlaps`,{label:'Undo',fn:()=>restoreSnapshot(snap)});else toast('Overlaps are in blocks that already started or are anchored');return moved}
 function quickBlock(text){const p=parseCapture(text);if(!p.title)return{err:'Type what the block is for'};const t=todayYmd();const date=p.due||(ui.date>=t?ui.date:t);const dur=Math.max(15,p.est||60);
   let start=p.dueTime?fromHM(p.dueTime):null;if(start==null){start=fit(gaps(date,busyFor(date),dayFrom(date)),dur);if(start==null)return{err:`No free ${fmtDur(dur)} left on ${fmtDay(date)}`}}
   const pid=p.projectName?findOrCreateProject(p.projectName).id:(currentProject()?currentProject().id:null);const id=createBlock({title:p.title,date,start,duration:dur,projectId:pid});return{id,date,start}}
@@ -2312,6 +2322,7 @@ setInterval(()=>{tickTimer();tickLive()},1000);setInterval(()=>liveTick(),30000)
 
 /* ============ more: steps, tags, search, shortcuts, focus timer, calendars, archive, streaks ============ */
 PI.search='<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>';
+PI.anchor='<circle cx="12" cy="5" r="2.2"/><path d="M12 7.2V21M5 12.5H2.5a9.5 9.5 0 0 0 19 0H19M5 12.5c0 4 3 7 7 8.5 4-1.5 7-4.5 7-8.5"/>';
 PI.grid='<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>';
 PI.timer='<circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.5 2M9.5 2.5h5"/>';
 PI.keyboard='<rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6 10h.01M9.5 10h.01M13 10h.01M16.5 10h.01M7.5 14h9"/>';
@@ -2698,8 +2709,8 @@ function liveTick(force){
   if(b.date!==t){stopLive({silent:true});toast('Timer stopped at midnight');return true}
   const p=P();const n=nowMin();let cursor=Math.max(Math.ceil((n+1+p.buffer)/5)*5,b.fromTimer?0:Math.ceil((b.start+b.duration+p.buffer)/5)*5);const moved=[];
   /* anything scheduled after the timer began that it has now reached slides along ahead of it, and so does whatever that bumps into */
-  for(const x of blocksOn(t).filter(x=>x.id!==b.id&&!x.live&&x.start>=b.start).sort((a,c)=>a.start-c.start)){
-    if(x.start<cursor){const ns=Math.min(1440-x.duration,cursor);if(ns!==x.start){put('blocks',x.id,{...x,start:ns});moved.push(state.blocks[x.id])}cursor=ns+x.duration+p.buffer}
+  for(const x of blocksOn(t).filter(x=>x.id!==b.id&&movable(x)&&x.start>=b.start).sort((a,c)=>a.start-c.start)){
+    if(x.start<cursor){const ns=pastAnchors(t,Math.min(1440-x.duration,cursor),x.duration,x.id);if(ns!==x.start){put('blocks',x.id,{...x,start:ns});moved.push(state.blocks[x.id])}cursor=ns+x.duration+p.buffer}
   }
   if(moved.length){const fresh=moved.filter(x=>!liveSaid.has(x.id+':'+x.start));fresh.forEach(x=>liveSaid.add(x.id+':'+x.start));
     if(fresh.length&&!force)toast(fresh.length===1?`Moved “${fresh[0].title}” to ${fmtTimeShort(fresh[0].start)} while the timer runs`:`Moved ${fresh.length} blocks later while the timer runs`);
@@ -2750,7 +2761,7 @@ function handleLive(act,el){
 })();
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.6.1';
+const APP_VERSION='1.6.2';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);

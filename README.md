@@ -49,6 +49,11 @@ Preferences (focus hours, buffer, breaks, lunch) are in Settings → Scheduling.
 - On the phone, projects sit along the bottom as icon bubbles (the current one shows its name and open count; the others show a count badge). Tap the grid button at the left for the full list with a search box; tap ··· on a row to edit it, or hold a bubble.
 - On a wide screen (desktop, iPad landscape) projects are listed in a sidebar with a **Find a project** box: type a few letters and press Enter to jump to the first match. Press `g` to get to the box from anywhere.
 
+## Blocks
+
+- **Focus** on a block (from its details, or the pulsing pill during the current block) opens a full-screen view with the time left and the block's to dos.
+- **Anchor in** locks a block in place: the timer, "Push the rest of today", "Fix overlaps" and smart scheduling will never move it, and blocks being pushed slide past it instead. Anchored blocks show a small anchor. You can still drag it yourself.
+
 ## Timer
 
 - **Start it anywhere:** tap an empty spot on today's calendar (or the **▶** pill) and a blank timer starts right away; press and hold on the calendar to add a block at that time instead; the ▶ on any to do (in a project list or Day view) times that to do; a block's details has **Start timer** (a block later today starts now).
