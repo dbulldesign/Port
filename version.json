@@ -1,4 +1,4 @@
 {
-  "version": "1.6.2",
-  "notes": "Focus (was Anchor in) and a new Anchor in that locks a block against rescheduling"
+  "version": "1.6.3",
+  "notes": "A running timer block shows its project and what it is for; name it while it runs"
 }
