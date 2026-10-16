@@ -1,4 +1,4 @@
 {
-  "version": "1.6.3",
-  "notes": "A running timer block shows its project and what it is for; name it while it runs"
+  "version": "1.6.4",
+  "notes": "Every block shows its project name"
 }
