@@ -637,6 +637,18 @@ svg{display:block}
   #toast,#updbar{background:rgba(44,44,46,.98)}
 }
 
+/* ---- moving and stretching events ---- */
+.block:not(.ext):not(.live):not(.preview):not(.provisional)::before{content:"";position:absolute;left:0;right:0;bottom:0;height:16px;cursor:ns-resize}
+@media (hover:hover){.block:not(.ext):not(.live):hover::before{background:linear-gradient(to top,color-mix(in srgb,var(--c) 35%,transparent),transparent)}}
+.block.stretching{box-shadow:0 0 0 2px var(--c),var(--shadow);z-index:6;transition:none}
+.timebadge.end{left:auto;right:4px;transform:translateY(-100%)}
+.ghost.mghost{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;background:var(--card);color:var(--label);font-size:14px;font-weight:600;white-space:nowrap;box-shadow:var(--shadow),0 0 0 1.5px var(--c);width:auto;height:auto}
+.ghost.mghost em{font-style:normal;color:var(--label2);font-weight:500}
+.ghost.mghost .pdot{width:9px;height:9px}
+.mchip[data-mblock]{cursor:grab;touch-action:none}
+.mchip{width:8px;height:8px}
+.mitems{gap:4px}
+@media (min-width:900px){.mchip{width:auto;height:auto}}
 /* ---- phone project bar ---- */
 .projbar.compact{gap:6px;padding:10px 12px 12px;margin-top:10px;align-items:center}
 .projbar.compact .proj{font-size:16px;font-weight:600;letter-spacing:-.2px;gap:8px;padding:4px 6px 4px 4px;border-radius:999px;color:var(--label2);transition:background .25s var(--ease),color .25s,padding .25s var(--ease)}
@@ -1727,20 +1739,22 @@ document.addEventListener('pointerdown',e=>{
   if(grab&&!e.target.closest('button')){G.pending={kind:'sheet',el:grab.closest('.sheet'),sx:e.clientX,sy:e.clientY};return}
   const dh=e.target.closest('.datehead');
   if(dh&&!isWide()){G.pending={kind:'dh',el:dh.closest('.cal'),sx:e.clientX,sy:e.clientY,h0:dh.closest('.cal').offsetHeight};return}
-  const task=e.target.closest('.task[data-task]');const block=e.target.closest('.block[data-id]');const proj=e.target.closest('.proj[data-pid]');
+  const task=e.target.closest('.task[data-task]');const block=e.target.closest('.block[data-id]');const proj=e.target.closest('.proj[data-pid]');const mchip=e.target.closest('.mchip[data-mblock]');
+  if(mchip){G.pending={kind:'mblock',el:mchip,id:mchip.dataset.mblock,sx:e.clientX,sy:e.clientY,mouse:e.pointerType==='mouse',draggable:true};if(!G.pending.mouse)G.timer=setTimeout(()=>{if(G.pending&&!G.mode)liftDrag()},380);return}
   if(SW.open&&(!task||task!==SW.open)&&!e.target.closest('.swr'))closeSwipe();
   if(task){if(e.target.closest('.swr'))return;G.pending={kind:'task',el:task,id:task.dataset.task,sx:e.clientX,sy:e.clientY,mouse:e.pointerType==='mouse',draggable:!!task.closest('.draggable')}}
-  else if(block&&block.closest('.timeline')){G.pending={kind:'block',el:block,id:block.dataset.id,sx:e.clientX,sy:e.clientY,mouse:e.pointerType==='mouse',draggable:true}}
+  else if(block&&block.closest('.timeline')){const live=block.classList.contains('live');const br=block.getBoundingClientRect();G.pending={kind:'block',el:block,id:block.dataset.id,sx:e.clientX,sy:e.clientY,mouse:e.pointerType==='mouse',draggable:!live,edge:!live&&e.clientY>br.bottom-18&&br.height>=40}}
   else if(proj&&proj.dataset.pid!=='inbox'){G.pending={kind:'proj',el:proj,id:proj.dataset.pid,sx:e.clientX,sy:e.clientY,mouse:e.pointerType==='mouse'};if(!G.pending.mouse)G.timer=setTimeout(()=>{if(G.pending&&!G.mode){G.mode='projedit';haptic(12);openSheet(projectSheet(G.pending.id))}},480);return}
   else if(e.target.closest('.mgrid')&&!isWide()){G.pending={kind:'mswipe',el:e.target.closest('.mgrid'),sx:e.clientX,sy:e.clientY};return}
   else{const col=e.target.closest('.daycol');if(col&&!e.target.closest('.block')){if(PROV){return}G.pending={kind:'slot',el:col,sx:e.clientX,sy:e.clientY,mouse:e.pointerType==='mouse',start:slotTime(col,e.clientY)};
       G.timer=setTimeout(()=>{const p=G.pending;if(p&&!G.mode){G.mode='slotdrag';haptic(14);createProvisional(p.el,p.start);p.offset=e.clientY-(p.el.getBoundingClientRect().top+(p.start-state.settings.dayStart*60)/60*hourPx())}},420);return}
     return}
-  if(!G.pending.mouse&&G.pending.draggable)G.timer=setTimeout(()=>{if(G.pending&&!G.mode)liftDrag()},380);
+  if(!G.pending.mouse&&G.pending.draggable)G.timer=setTimeout(()=>{if(G.pending&&!G.mode){if(G.pending.edge)startResize();else liftDrag()}},380);
 },{passive:true});
 function gestureMove(e){
   const p=G.pending;if(!p)return;const dx=e.clientX-p.sx,dy=e.clientY-p.sy;
   if(G.mode==='drag'){moveDrag(e);return}
+  if(G.mode==='bresize'){moveResize(e);return}
   if(G.mode==='swipe'){moveSwipe(dx);return}
   if(G.mode==='sheet'){p.el.style.transition='none';p.el.style.transform=`translate3d(0,${dy>0?dy:dy*.15}px,0)`;const ov=$('#overlay');if(ov)ov.style.background=`rgba(0,0,0,${Math.max(.15,.5-Math.max(0,dy)/1200)})`;return}
   if(G.mode==='calresize'){const pts=calPoints();let h=p.h0+dy;if(h<pts.min)h=pts.min-(pts.min-h)*.22;else if(h>pts.full)h=pts.full+(h-pts.full)*.22;p.el.style.height=h+'px';return}
@@ -1755,13 +1769,13 @@ function gestureMove(e){
   if(ad<7&&ady<7)return;
   if(p.kind==='mswipe'){if(ad>ady)G.mode='dayswipe';else G.pending=null;return}
   if(p.kind==='slot'){clearTimeout(G.timer);if(p.mouse&&ady>ad){G.mode='draw';createProvisional(p.el,Math.min(p.start,slotTime(p.el,e.clientY)),Math.max(15,Math.abs(slotTime(p.el,e.clientY)-p.start)));return}if(ad>ady&&!isWide()){G.mode='dayswipe';return}G.pending=null;return}
-  if(p.mouse){if(p.draggable)liftDrag();else G.pending=null;return}
+  if(p.mouse){if(p.kind==='block'&&p.edge)startResize();else if(p.draggable)liftDrag();else G.pending=null;return}
   if(ad>ady&&p.kind==='task'){clearTimeout(G.timer);G.mode='swipe';startSwipe(p.el);moveSwipe(dx);return}
   if(ad>ady&&p.kind==='block'&&!isWide()){clearTimeout(G.timer);G.mode='dayswipe';return}
   clearTimeout(G.timer);G.pending=null;
 }
 /* visual updates run once per frame; the latest finger position wins */
-const VISUAL=new Set(['drag','swipe','sheet','calresize','dayswipe','slotdrag','draw']);
+const VISUAL=new Set(['drag','swipe','sheet','calresize','dayswipe','slotdrag','draw','bresize']);
 document.addEventListener('pointerdown',()=>{G.vs=[]},{capture:true,passive:true});
 document.addEventListener('pointermove',e=>{
   const vs=G.vs||(G.vs=[]);vs.push({t:e.timeStamp,x:e.clientX,y:e.clientY});while(vs.length>2&&e.timeStamp-vs[0].t>100)vs.shift();
@@ -1774,6 +1788,7 @@ function endGesture(e,cancelled){
   const p=G.pending;clearTimeout(G.timer);if(!p){G.mode=null;return}const V=vel();
   const dx=e?e.clientX-p.sx:0,dy=e?e.clientY-p.sy:0;const mode=G.mode;
   if(mode==='drag')endDrag(e,cancelled);
+  else if(mode==='bresize')endResize(cancelled);
   else if(mode==='swipe')endSwipe(V.x);
   else if(mode==='sheet'){const el=p.el,y=Math.max(0,dy),vy=cancelled?0:V.y*1000,ov=$('#overlay');
     if(!cancelled&&(dy>110||(V.y>.5&&dy>30)))dismissSheetFrom(el,y,vy);
@@ -1801,7 +1816,7 @@ function endGesture(e,cancelled){
 }
 document.addEventListener('pointerup',e=>endGesture(e,false));
 document.addEventListener('pointercancel',e=>endGesture(e,true));
-document.addEventListener('touchmove',e=>{if(['drag','swipe','sheet','calresize','dayswipe','slotdrag','draw'].includes(G.mode))e.preventDefault()},{passive:false});
+document.addEventListener('touchmove',e=>{if(['drag','swipe','sheet','calresize','dayswipe','slotdrag','draw','bresize'].includes(G.mode))e.preventDefault()},{passive:false});
 document.addEventListener('contextmenu',e=>{if(e.target.closest('.task,.block,.proj,.daycol'))e.preventDefault()});
 
 /* swipe */
@@ -1816,13 +1831,25 @@ function endSwipe(vx=0){const s=SW.cur;if(!s)return;G.suppressClick=true;setTime
   else if(s.dx<-70||(vx<-.45&&s.dx<-28)){settleSwipe(s,-160,vx);SW.open=s.row}
   else{s.row.classList.remove('armed');settleSwipe(s,0,vx)}SW.cur=null}
 
+/* stretch a block from its bottom edge */
+function startResize(){const p=G.pending;if(!p||G.mode)return;G.mode='bresize';clearTimeout(G.timer);const b=state.blocks[p.id];if(!b){G.pending=null;G.mode=null;return}haptic(10);
+  p.el.classList.add('stretching');p.dur=b.duration;p.badge=document.createElement('div');p.badge.className='timebadge end';p.el.closest('.daycol').appendChild(p.badge);moveResize({clientY:p.sy})}
+function moveResize(e){const p=G.pending;const b=state.blocks[p.id];if(!b)return;const col=p.el.closest('.daycol');const cr=col.getBoundingClientRect();const hs=state.settings.dayStart*60,he=state.settings.dayEnd*60,hh=hourPx();
+  let end=hs+Math.round((e.clientY-cr.top)/hh*60/5)*5;end=Math.max(b.start+15,Math.min(he,1440,end));const dur=end-b.start;
+  if(dur!==p.dur)haptic(3);p.dur=dur;p.el.style.height=Math.max(30,(end-Math.max(b.start,hs))/60*hh-4)+'px';const bd=p.el.querySelector('.bd');if(bd)bd.textContent=fmtDur(dur);
+  p.badge.style.top=((end-hs)/60*hh)+'px';p.badge.textContent='ends '+fmtTimeShort(end)}
+function endResize(cancelled){const p=G.pending;if(!p)return;G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);if(p.badge)p.badge.remove();p.el.classList.remove('stretching');
+  const b=state.blocks[p.id];if(!cancelled&&b&&p.dur&&p.dur!==b.duration){const snap=snapshotState();put('blocks',p.id,{...b,duration:p.dur});haptic(8);toast(`“${b.title}” now ends at ${fmtTimeShort(b.start+p.dur)}`,{label:'Undo',fn:()=>restoreSnapshot(snap)})}
+  renderApp()}
+
 /* hold and carry */
 function liftDrag(){
   const p=G.pending;if(!p||G.mode)return;G.mode='drag';clearTimeout(G.timer);haptic(14);closeSwipe();
   const r=p.el.getBoundingClientRect();const ghost=document.createElement('div');ghost.className='ghost'+(p.kind==='block'?' block':'');
   if(p.kind==='task'){const wrap=document.createElement('div');wrap.className='task';wrap.style.setProperty('--c',p.el.style.getPropertyValue('--c'));const inner=p.el.querySelector('.inner').cloneNode(true);inner.style.transform='';wrap.appendChild(inner);ghost.appendChild(wrap)}
+  else if(p.kind==='mblock'){const b=state.blocks[p.id];ghost.className='ghost mghost';ghost.style.setProperty('--c',colorOf(b?b.projectId:null));ghost.innerHTML=`<span class="pdot" style="background:var(--c)"></span>${esc(b?b.title:p.el.dataset.title||'')}${b?` <em>${fmtTimeShort(b.start)}</em>`:''}`}
   else{const c=p.el.cloneNode(true);c.style.position='static';c.style.left='0';c.style.top='0';c.style.width='100%';c.style.height='100%';c.classList.remove('dragging','past','focusing');ghost.appendChild(c)}
-  ghost.style.cssText+=`left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;transform:scale(1.04)`;
+  if(p.kind==='mblock')ghost.style.cssText+=`left:${r.left}px;top:${r.top-36}px;transform:scale(1.04)`;else ghost.style.cssText+=`left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;transform:scale(1.04)`;
   document.body.appendChild(ghost);
   G.drag={ghost,r,target:null,offY:p.sy-r.top,newStart:null,newDate:null,badge:null,line:null,preview:null,slot:null};
   p.el.classList.add('dragging');
@@ -1844,7 +1871,8 @@ function moveDrag(e){
     }else{if(d.preview){d.preview.remove();d.preview=null}d.slot=null}
     if(t!==d.target){if(d.target)d.target.classList.remove('drop');d.target=t;if(t){t.classList.add('drop');haptic(5)}}
   }else{
-    d.ghost.style.transform=`translate(${isWide()?dx:0}px,${dy}px) scale(1.02)`;
+    if(p.kind==='mblock'){d.ghost.style.transform=`translate(${dx}px,${dy}px) scale(1.04)`;const t=under&&under.closest('.mday[data-day]');if(t!==d.target){if(d.target)d.target.classList.remove('drop');d.target=t;if(t){t.classList.add('drop');haptic(4)}}return}
+    d.ghost.style.transform=`translate(${isWide()||visibleDates().length>1?dx:0}px,${dy}px) scale(1.02)`;
     const col=under&&under.closest('.daycol');
     if(col){const cr=col.getBoundingClientRect();const y=e.clientY-d.offY-cr.top;const hs=state.settings.dayStart*60;
       let start=hs+Math.round(y/hourPx()*60/15)*15;start=Math.max(0,Math.min(1440-15,start));
@@ -1873,7 +1901,8 @@ function endDrag(e,cancelled){
     else{d.ghost.style.transition='transform .25s var(--spring),opacity .25s';d.ghost.style.transform='scale(.9)';d.ghost.style.opacity='0';setTimeout(()=>{d.ghost.remove()},250);finish()}
   }else{
     d.ghost.remove();finish();
-    if(d.newStart!=null){const b=state.blocks[p.id];if(b&&(b.start!==d.newStart||(d.newDate&&b.date!==d.newDate))){put('blocks',p.id,{...b,start:d.newStart,date:d.newDate||b.date});ui.freshBlock=p.id;haptic(10);renderApp();toast('Moved to '+fmtTimeShort(d.newStart))}}
+    if(p.kind==='mblock'){const t=d.target;const b=state.blocks[p.id];if(t&&b&&t.dataset.day!==b.date){const snap=snapshotState();put('blocks',p.id,{...b,date:t.dataset.day});tasksIn(p.id).forEach(x=>{if(x.due&&x.due===b.date)put('tasks',x.id,{...x,due:t.dataset.day})});haptic(10);renderApp();toast(`Moved “${b.title}” to ${fmtDay(t.dataset.day)}`,{label:'Undo',fn:()=>restoreSnapshot(snap)})}return}
+    if(d.newStart!=null){const b=state.blocks[p.id];if(b&&(b.start!==d.newStart||(d.newDate&&b.date!==d.newDate))){const snap=snapshotState();put('blocks',p.id,{...b,start:d.newStart,date:d.newDate||b.date});ui.freshBlock=p.id;haptic(10);renderApp();toast('Moved to '+fmtTimeShort(d.newStart)+(d.newDate&&d.newDate!==b.date?', '+fmtDay(d.newDate):''),{label:'Undo',fn:()=>restoreSnapshot(snap)})}}
   }
 }
 
@@ -2620,11 +2649,11 @@ function monthDates(){const d=fromYmd(ui.date);const first=ymd(new Date(d.getFul
   const out=[];let cur=weekStartOf(first);while(cur<=last||out.length%7){out.push(cur);cur=shiftYmd(cur,1)}return out}
 function monthHtml(){const dates=monthDates();const m=fromYmd(ui.date).getMonth();const t=todayYmd();const wide=isWide();const max=wide?4:3;
   const ws=state.settings.weekStart==null?1:state.settings.weekStart;const heads=Array.from({length:7},(_,k)=>(wide?WD:WD1)[(ws+k)%7]);
-  const cell=d=>{const dd=fromYmd(d);const items=[...extOn(d).filter(x=>x.allDay).map(x=>({t:x.title,c:x.color,ext:1})),...blocksOn(d).map(b=>({t:b.title,c:colorOf(b.projectId),s:b.start})),...extOn(d).filter(x=>!x.allDay).map(x=>({t:x.title,c:x.color,s:x.start,ext:1}))].sort((a,b)=>(a.s??-1)-(b.s??-1));
+  const cell=d=>{const dd=fromYmd(d);const items=[...extOn(d).filter(x=>x.allDay).map(x=>({t:x.title,c:x.color,ext:1})),...blocksOn(d).map(b=>({t:b.title,c:colorOf(b.projectId),s:b.start,id:b.id})),...extOn(d).filter(x=>!x.allDay).map(x=>({t:x.title,c:x.color,s:x.start,ext:1}))].sort((a,b)=>(a.s??-1)-(b.s??-1));
     const due=tasksForDay(d).filter(x=>!x.done).length;const shown=items.slice(0,max);const more=items.length-shown.length;
     return`<button class="mday ${dd.getMonth()!==m?'out':''} ${d===t?'today':''} ${d<t?'past':''}" data-act="view:day" data-date="${d}" data-day="${d}" aria-label="${esc(fmtLong(d))}${items.length?', '+items.length+' on the calendar':''}${due?', '+due+' to do'+(due===1?'':'s'):''}">
       <span class="mnum">${dd.getDate()}</span>${due?`<span class="mdue">${due}</span>`:''}
-      <span class="mitems">${shown.map(x=>`<i class="mchip ${x.ext?'ext':''}" style="--c:${x.c}">${wide?`${x.s!=null?`<em>${fmtTimeShort(x.s)}</em> `:''}${esc(x.t)}`:''}</i>`).join('')}${more>0?`<span class="mmore">+${more}</span>`:''}</span></button>`};
+      <span class="mitems">${shown.map(x=>`<i class="mchip ${x.ext?'ext':''}" ${x.id?`data-mblock="${x.id}" data-title="${esc(x.t)}"`:''} style="--c:${x.c}">${wide?`${x.s!=null?`<em>${fmtTimeShort(x.s)}</em> `:''}${esc(x.t)}`:''}</i>`).join('')}${more>0?`<span class="mmore">+${more}</span>`:''}</span></button>`};
   return`<div class="mgrid ${ui.dayAnim}" style="--rows:${dates.length/7}"><div class="mhead">${heads.map(h=>`<span>${h}</span>`).join('')}</div><div class="mbody">${dates.map(cell).join('')}</div></div>`}
 function handleView(act,el){
   if(act==='view:set'){setCalView(el.dataset.v);if(el.dataset.v==='month'&&!isWide()&&ui.cal==='min'){ui.cal='half';saveUi()}renderApp();return true}
@@ -2721,7 +2750,7 @@ function handleLive(act,el){
 })();
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.6.0';
+const APP_VERSION='1.6.1';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);

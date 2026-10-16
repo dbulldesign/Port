@@ -59,6 +59,7 @@ Preferences (focus hours, buffer, breaks, lunch) are in Settings → Scheduling.
 
 - **Phone:** the **D / W / M** switch at the top left of the calendar shows a day, the whole week, or the month. Swipe sideways to move by a day, a week or a month.
 - **Desktop / iPad:** next to 1 / 3 / 5 days there are **Week** and **Month**; the arrows move by the same amount.
+- **Move things by dragging.** In Day and Week, hold a block (or just drag it with a mouse) to move it to another time or another day; drag its bottom edge to change how long it lasts (5-minute steps). In Month, drag an event's dot or title onto another day. Every move has an Undo.
 - Tap a day (in the week header or a month square) to open that day. In Month, coloured dots (or titles on a wide screen) are blocks and calendar events; the small blue number is how many to dos are due. Drag a to do onto a month day to plan it for that day.
 - Keyboard: `d`, `w`, `m` switch views; `←` `→` move.
 

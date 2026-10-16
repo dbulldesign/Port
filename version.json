@@ -1,4 +1,4 @@
 {
-  "version": "1.6.0",
-  "notes": "Project bubbles and a searchable Projects list on the phone"
+  "version": "1.6.1",
+  "notes": "Drag events between days in Month view, stretch a block from its bottom edge, ghost follows across week columns"
 }
