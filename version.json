@@ -1,4 +1,4 @@
 {
-  "version": "1.6.4",
-  "notes": "Every block shows its project name"
+  "version": "1.7.0",
+  "notes": "Smart project tagging, #\"New Project\", and a hover card with block details on desktop"
 }

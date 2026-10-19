@@ -44,7 +44,8 @@ Preferences (focus hours, buffer, breaks, lunch) are in Settings → Scheduling.
 
 ## Projects
 
-- Wherever you pick a project (a to do's details, a block, the timer's "What was that for?"), **+ New** lets you type a name and makes the project on the spot. In a to do, `@Name` does the same.
+- **Smart tagging:** write a project's name anywhere in a to do or quick block ("Call Focus Lighting about fixtures") and it joins that project; the words stay in the title. Type `#"Project Name"` (curly quotes from the phone keyboard work too) to create a project that doesn't exist yet, or connect to one that does. A plain `#word` that matches a project's name means that project; otherwise it's a tag.
+- Wherever you pick a project (a to do's details, a block, the timer's "What was that for?"), **+ New** lets you type a name and makes the project on the spot. Typing a project's name in the title there picks it too.
 - New projects get a colour no other project uses, and an icon guessed from the name ("Tavern on the Green" gets a fork and knife, "Gym" a dumbbell, "Taxes" a coin). If nothing in the name fits, the icon is picked at random from the ones not used yet. You can always change either.
 - On the phone, projects sit along the bottom as icon bubbles (the current one shows its name and open count; the others show a count badge). Tap the grid button at the left for the full list with a search box; tap ··· on a row to edit it, or hold a bubble.
 - On a wide screen (desktop, iPad landscape) projects are listed in a sidebar with a **Find a project** box: type a few letters and press Enter to jump to the first match. Press `g` to get to the box from anywhere.
