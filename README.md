@@ -70,6 +70,16 @@ Preferences (focus hours, buffer, breaks, lunch) are in Settings → Scheduling.
 - **Block sizes:** no block is shorter than 30 minutes, so everything stays readable. A running timer is the one exception: it shows its real length and time while it runs. When it stops, the time rounds to the nearest half hour (never down by more than a couple of minutes): a 23-minute timer becomes 30 minutes on the block and on the to do it was logged against.
 - **When you stop** (tap the pill): if the timer was started from a to do or a block, Port just logs the time. If it was a blank timer, it asks what the time was for: type a name and project, or pick the to do it belongs to. Tap **Later** to keep it as "Untitled time" and name it from the block whenever you like.
 
+## Reminders when Port is closed
+
+Port has no server of its own, so this repository's GitHub Actions sends the reminders: every 10 minutes it reads your plan from the private sync gist and sends standard web-push notifications to the devices you've turned them on for.
+
+1. **Once:** in this repository go to **Settings → Secrets and variables → Actions → New repository secret**. Name it `PORT_GIST_TOKEN` and paste your Port sync token (the one with only "gist" ticked).
+2. **On each device:** Port → Settings → *Reminders when Port is closed* → **Turn on**, and allow notifications. On iPhone/iPad this works from the Home Screen app only (iOS 16.4 or later).
+3. Choose how far ahead to be told about blocks (5–30 minutes, default 10), and whether a long-running timer should check in.
+
+Notes: GitHub can run scheduled jobs a few minutes late when it's busy, so treat reminders as "around" the time. The repository is public, so the schedule uses no paid Actions minutes. The workflow does nothing until the secret is added. Each device creates its own keys; they're stored in your private gist with your plan.
+
 ## Tools (Settings → Tools)
 
 - **Timesheet:** day, week or month; time per project and per block (timers included), plus time logged on to dos. **CSV** exports every block with date, times, minutes, hours, project and to dos.

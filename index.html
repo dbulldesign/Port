@@ -990,8 +990,8 @@ const I={
 };
 
 /* ============ state & persistence (standalone: local first, GitHub Gist sync) ============ */
-const COLLS=['projects','tasks','blocks','routines','days','objectives','templates'];
-const state={projects:{},tasks:{},blocks:{},routines:{},days:{},objectives:{},templates:{},settings:{dayStart:6,dayEnd:23,theme:'auto',notify:false,days:3},del:Object.fromEntries(COLLS.map(c=>[c,{}]))};
+const COLLS=['projects','tasks','blocks','routines','days','objectives','templates','push'];
+const state={projects:{},tasks:{},blocks:{},routines:{},days:{},objectives:{},templates:{},push:{},settings:{dayStart:6,dayEnd:23,theme:'auto',notify:false,days:3},del:Object.fromEntries(COLLS.map(c=>[c,{}]))};
 const ui={view:'today',date:todayYmd(),page:null,focusBlockId:null,showDone:false,tray:'closed',scrolledToNow:false};
 const LS_KEY='port-planner-v1';
 const SEC_KEY='port-secrets-v1';
@@ -1643,6 +1643,7 @@ function settingsSheet(){return()=>{
       <button class="frow" data-act="archive:open" style="width:100%"><label style="min-width:0;flex:1">Archived to dos<small style="display:block;font-size:13px;color:var(--label2)">${allTasks().filter(t=>t.archived).length} kept for history</small></label>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>
     ${isWide()?`<div class="card" style="margin-top:14px"><button class="frow" data-act="keys:open" style="width:100%"><label style="min-width:0;flex:1">Keyboard shortcuts<small style="display:block;font-size:13px;color:var(--label2)">Press ? anytime</small></label>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>`:''}
     <div class="card" style="margin-top:14px"><button class="frow" data-act="sync:open" style="width:100%"><label style="min-width:0;flex:1;display:flex;align-items:center;gap:10px"><span class="syncdot ${dbStatus}"></span><span>Sync across devices<small style="display:block;font-size:13px;color:var(--label2)" class="sync-status">${syncStatusText()}</small></span></label>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>
+    ${pushCard()}
     <div class="fnote" style="padding-top:14px">Tools</div><div class="card" style="margin-top:6px">
       <button class="frow" data-act="ts:open" style="width:100%"><label style="min-width:0;flex:1">Timesheet<small style="display:block;font-size:13px;color:var(--label2)">Time per project and block, export as CSV</small></label>${I.chevR.replace('<svg','<svg class="chevr"')}</button>
       <button class="frow" data-act="tpl:open" style="width:100%"><label style="min-width:0;flex:1">Templates<small style="display:block;font-size:13px;color:var(--label2)">${templates().length?templates().length+' saved':'Save a typical day or week'}</small></label>${I.chevR.replace('<svg','<svg class="chevr"')}</button>
@@ -2457,7 +2458,7 @@ function handleExtra(act,el,e){
     case'ritual:auto':{if(!R.applied)applyPlanRitual();R.boxed=autoTimebox(R.date);haptic(10);renderApp();drawSheet();break}
     case'ritual:finish':{const k=R.kind;if(k==='plan'){if(!R.applied)applyPlanRitual();else setDay(R.date,{objective:R.obj.trim(),planned:true});toast('Day planned')}else{finishShutdown();toast('Day closed. See you tomorrow')}R=null;closeAllSheets();haptic(12);renderApp();
       setTimeout(()=>burst(innerWidth/2,innerHeight*.42,k==='plan'?'#FF9F0A':'#5E5CE6'),60);break}
-    default:if(!handleView(act,el)&&!handleLive(act,el)&&!handleSel(act,el)&&!handleR3(act,el))handleMore(act,el,e);
+    default:if(!handleView(act,el)&&!handleLive(act,el)&&!handleSel(act,el)&&!handleR3(act,el)&&!handlePush(act))handleMore(act,el,e);
   }
 }
 document.addEventListener('input',e=>{const el=e.target;if(!R)return;if(el.dataset.act==='ritual:obj')R.obj=el.value;if(el.dataset.act==='ritual:refl')R.refl=el.value});
@@ -3148,8 +3149,38 @@ function handleR3(act,el){
     case'qa:copy':(navigator.clipboard?navigator.clipboard.writeText(el.dataset.v).then(()=>toast('Copied')):Promise.reject()).catch(()=>toast('Couldn’t copy'));return true;
   }return false}
 
+/* ---- reminders when Port is closed (web push sent by the repository's GitHub Action) ---- */
+const b64u=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const unb64u=s=>{s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return Uint8Array.from(atob(s),c=>c.charCodeAt(0))};
+const deviceId=()=>{let id='';try{id=localStorage.getItem(LS_KEY+':device')||'';if(!id){id=uid('dev');localStorage.setItem(LS_KEY+':device',id)}}catch(e){id='dev-anon'}return id};
+const pushSupported=()=>'serviceWorker'in navigator&&'PushManager'in window&&typeof Notification!=='undefined';
+const pushMine=()=>state.push&&state.push[deviceId()];
+const repoInfo=()=>{const h=location.hostname.match(/^([^.]+)\.github\.io$/i);const seg=location.pathname.split('/').filter(Boolean)[0];return h?{owner:h[1],repo:seg||h[1]+'.github.io'}:null};
+async function vapidKeys(){const v=state.push&&state.push.vapid;if(v&&v.pub&&v.d)return v;
+  const kp=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);const jwk=await crypto.subtle.exportKey('jwk',kp.privateKey);const raw=await crypto.subtle.exportKey('raw',kp.publicKey);
+  const keys={id:'vapid',pub:b64u(raw),d:jwk.d,createdAt:Date.now()};put('push','vapid',keys);return keys}
+async function pushOn(){
+  if(!pushSupported()){toast(isIOS()&&!isStandaloneApp()?'On iPhone, add Port to the Home Screen first, then turn this on from there':'This browser can’t receive notifications');return}
+  if(!(secrets.token&&sync.gistId)){toast('Turn on sync first: reminders are sent from your synced plan');openSheet(syncSheet());return}
+  try{let perm=Notification.permission;if(perm==='default')perm=await Notification.requestPermission();if(perm!=='granted'){toast('Notifications are blocked for Port in this browser’s settings');return}
+    const reg=await navigator.serviceWorker.ready;const keys=await vapidKeys();let sub=await reg.pushManager.getSubscription();
+    if(sub){const cur=sub.options&&sub.options.applicationServerKey?b64u(sub.options.applicationServerKey):'';if(cur&&cur!==keys.pub){await sub.unsubscribe();sub=null}}
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:unb64u(keys.pub)});
+    const j=sub.toJSON();put('push',deviceId(),{id:deviceId(),kind:'sub',sub:{endpoint:j.endpoint,keys:j.keys},tz:Intl.DateTimeFormat().resolvedOptions().timeZone,device:isIOS()?'iPhone/iPad':/Android/.test(navigator.userAgent)?'Android':'Computer',at:Date.now()});
+    state.settings.tz=Intl.DateTimeFormat().resolvedOptions().timeZone;saveSettings();runSync();refreshSheet();toast('Reminders are on for this device')}
+  catch(e){toast('Couldn’t turn reminders on: '+((e&&e.message)||'unknown error'))}}
+async function pushOff(){try{const reg=await navigator.serviceWorker.ready;const sub=await reg.pushManager.getSubscription();if(sub)await sub.unsubscribe()}catch(e){}put('push',deviceId(),null);refreshSheet();toast('Reminders are off for this device')}
+async function pushTest(){try{const reg=await navigator.serviceWorker.ready;await reg.showNotification('Port reminders work',{body:'This is how a reminder will look. Real ones come from GitHub every 10 minutes.',icon:'icons/icon-192.png',badge:'icons/icon-192.png',tag:'port-test'})}catch(e){toast('Couldn’t show a test notification')}}
+function pushCard(){const s=state.settings;const mine=pushMine();const subs=Object.values(state.push||{}).filter(x=>x.kind==='sub');const r=repoInfo();
+  return`<div class="fnote" style="padding-top:14px">Reminders when Port is closed</div><div class="card" style="margin-top:6px">
+    <div class="frow"><label style="min-width:0;flex:1">This device<small style="display:block;font-size:13px;color:var(--label2)">${mine?'On':pushSupported()?'Off':isIOS()&&!isStandaloneApp()?'Open Port from the Home Screen to turn on':'Not available in this browser'}${subs.length?` · ${subs.length} device${subs.length===1?'':'s'} signed up`:''}</small></label>${mine?`<button class="btn sm" data-act="push:test">Test</button><button class="btn sm danger" data-act="push:off">Turn off</button>`:`<button class="btn sm primary" data-act="push:on">Turn on</button>`}</div>
+    <div class="frow"><label>Before blocks</label><select data-act="setting" data-key="pushLead">${[[0,'Don’t remind'],[5,'5 minutes'],[10,'10 minutes'],[15,'15 minutes'],[30,'30 minutes']].map(([m,l])=>`<option value="${m}" ${(s.pushLead??10)===m?'selected':''}>${l}</option>`).join('')}</select></div>
+    <div class="frow"><label style="min-width:0;flex:1">Timer check-ins<small style="display:block;font-size:13px;color:var(--label2)">Uses “Check in after” above</small></label><button class="switch ${s.pushTimer!==false?'on':''}" data-act="push:timer" role="switch" aria-checked="${s.pushTimer!==false}" aria-label="Timer check-ins"></button></div></div>
+  <div class="fnote">One-time setup: in your GitHub repository add a secret named <b>PORT_GIST_TOKEN</b> containing your sync token${r?` (<a href="https://github.com/${r.owner}/${r.repo}/settings/secrets/actions/new" target="_blank" rel="noopener" style="color:var(--tint)">open the page</a>)`:''}. GitHub then checks every 10 minutes and sends reminders; scheduled runs can be a few minutes late when GitHub is busy.</div>`}
+function handlePush(act){switch(act){case'push:on':pushOn();return true;case'push:off':pushOff();return true;case'push:test':pushTest();return true;case'push:timer':state.settings.pushTimer=state.settings.pushTimer===false;saveSettings();refreshSheet();return true}return false}
+
 /* ---- version & updates ---- */
-const APP_VERSION='1.11.0';
+const APP_VERSION='1.12.0';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);

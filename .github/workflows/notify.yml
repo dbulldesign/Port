@@ -1,0 +1,45 @@
+name: Port reminders
+
+# Reads your Port plan from its private gist and sends web-push reminders
+# to the devices you turned them on for (Settings → Reminders when Port is closed).
+# Needs one repository secret: PORT_GIST_TOKEN (your Port sync token, gist scope).
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: port-reminders
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Skip until the secret is added
+        id: gate
+        env:
+          GIST_TOKEN: ${{ secrets.PORT_GIST_TOKEN }}
+        run: |
+          if [ -z "$GIST_TOKEN" ]; then echo "PORT_GIST_TOKEN is not set; nothing to do."; echo "go=no" >> "$GITHUB_OUTPUT"; else echo "go=yes" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.go == 'yes'
+        with:
+          sparse-checkout: .github/scripts
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.go == 'yes'
+        with:
+          node-version: 20
+      - name: Send reminders
+        if: steps.gate.outputs.go == 'yes'
+        env:
+          GIST_TOKEN: ${{ secrets.PORT_GIST_TOKEN }}
+        run: |
+          cd .github/scripts
+          npm install --no-save --no-audit --no-fund web-push@3.6.7 >/dev/null
+          node notify.mjs
