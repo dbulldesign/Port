@@ -709,6 +709,12 @@ svg{display:block}
 .pill.timerpill .trun{font-weight:700;font-variant-numeric:tabular-nums}
 .pill.timerpill .tp{max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;opacity:.9}
 .pill.timerpill svg{width:14px;height:14px;opacity:.9}
+.pill.timerpill.paused{opacity:.75}
+.pill.timerpill.paused i::after{animation:none}
+.pill.pausepill{padding:7px 10px}
+.pill.pausepill svg{width:14px;height:14px}
+.livechip.paused{opacity:.7}
+.livechip.paused i::after{animation:none}
 .livechip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 8px;border-radius:999px;background:color-mix(in srgb,var(--c) 22%,transparent);color:var(--c);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;flex:none;margin-left:auto}
 .livechip i{width:7px;height:7px;border-radius:50%;background:var(--c);position:relative}
 .livechip i::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;animation:ripple 1.6s ease-out infinite}
@@ -1093,7 +1099,7 @@ const tasksIn=bid=>tasksArr().filter(t=>t.blockId===bid).sort((a,b)=>(a.done-b.d
 const blocksOn=date=>Object.values(state.blocks).filter(b=>b.date===date).sort((a,b)=>a.start-b.start||a.createdAt-b.createdAt);
 const MIN_BLOCK=30;
 const roundTo30=m=>{const up=Math.ceil(m/30)*30;const down=up-30;return m-down<=3&&down>=MIN_BLOCK?down:Math.max(MIN_BLOCK,up)};
-const blockEnd=b=>b.start+(b.live&&b.date===todayYmd()?Math.max(b.duration,nowMin()+1-b.start):Math.max(MIN_BLOCK,b.duration));
+const blockEnd=b=>b.live&&b.date===todayYmd()?liveEndMin(b):b.start+Math.max(MIN_BLOCK,b.duration);
 const blockIcon=b=>b.icon||(b.projectId&&state.projects[b.projectId]&&state.projects[b.projectId].icon)||'tag';
 function inboxTasks(){return tasksArr().filter(t=>!t.blockId&&!t.done)}
 function sortTasks(arr){return arr.sort((a,b)=>(b.urgency-a.urgency)||((a.due||'9')>(b.due||'9')?1:(a.due||'9')<(b.due||'9')?-1:0)||(a.createdAt-b.createdAt))}
@@ -1282,7 +1288,7 @@ function dateheadWide(){
     <span class="spacer"></span><div class="seg">${[1,3,5].map(k=>`<button class="${ui.calView==='day'&&n===k?'on':''}" data-act="days:set" data-n="${k}">${k}</button>`).join('')}<button class="${ui.calView==='week'?'on':''}" data-act="view:set" data-v="week">Week</button><button class="${ui.calView==='month'?'on':''}" data-act="view:set" data-v="month">Month</button></div><div class="calpills">${schedPill()}${focusPill()}</div>`;
 }
 function focusPill(){const lb=liveBlock();
-  if(lb&&lb.date===todayYmd())return`<button class="pill live timerpill press" style="${cvars(liveColor(lb))}" data-act="live:stop" aria-label="Stop the timer"><i></i><span class="trun tabular" data-start="${lb.liveStart}">${fmtClock(liveElapsedSec(lb))}</span><span class="tp">${esc(lb.untitled?'Timer':lb.title)}</span>${I.stop}</button>`;
+  if(lb&&lb.date===todayYmd())return`<button class="pill pausepill press" data-act="${lb.paused?'live:resume':'live:pause'}" aria-label="${lb.paused?'Resume':'Pause'} the timer">${lb.paused?I.play:I.pause}</button><button class="pill live timerpill press ${lb.paused?'paused':''}" style="${cvars(liveColor(lb))}" data-act="live:stop" aria-label="Stop the timer"><i></i><span class="trun tabular" data-start="${lb.liveStart}">${fmtClock(liveElapsedSec(lb))}</span><span class="tp">${lb.paused?'Paused':esc(lb.untitled?'Timer':lb.title)}</span>${I.stop}</button>`;
   const b=currentBlock();const start=`<button class="pill startpill press" data-act="live:start" aria-label="Start a timer">${I.play}<span>Start</span></button>`;
   if(!b)return start;return start+`<button class="pill live press" style="${cvars(colorOf(b.projectId))}" data-act="focus:open"><i></i>${esc(b.title)}</button>`}
 
@@ -1466,7 +1472,7 @@ function blockSheet(id){return()=>{
     ${(b.fromTimer||b.liveTask)&&!b.live?`<div class="card" style="margin-bottom:14px"><button class="frow" data-act="block:edit" data-id="${id}" style="width:100%"><label style="min-width:0;flex:1">Timer<small style="display:block;font-size:13px;color:var(--label2)">Started ${fmtTimeShort(b.start)}, ended ${fmtTimeShort(blockEnd(b))} · ${fmtDur(b.duration)}</small></label><span class="val" style="flex:none;color:var(--tint)">Edit end</span>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>`:''}
     <div class="card" style="padding:8px 0 4px"><div class="todo-h" style="padding-left:20px"><span class="dotted"></span>Tasks</div><ul class="list">${tasks.map((t,i)=>taskRow(t,{i})).join('')||`<div class="empty" style="padding-top:6px">Nothing scheduled yet. Add a to do below${isWide()?', or drag one in':', or hold one in the list and carry it here'}.</div>`}</ul>
       ${ui.adding&&ui.adding.kind==='block'&&ui.adding.id===id?`<div class="newrow" style="padding-left:20px"><span class="plus">${I.plus}</span><input class="newinput" placeholder="New To Do" aria-label="New to do" autocomplete="off" enterkeyhint="done" data-act="new:text" autofocus></div>`:`<button class="newrow ${tasks.length?'':'dim'}" style="padding-left:20px" data-act="todo:newInBlock" data-id="${id}"><span class="plus">${I.plus}</span>New To Do</button>`}</div>
-    <div class="btnrow">${b.live?`<button class="btn primary" data-act="live:stop" style="--c:#FF453A">Stop timer · <span class="trun tabular" data-start="${b.liveStart}">${fmtClock(liveElapsedSec(b))}</span></button>`:b.date===todayYmd()&&blockEnd(b)>nowMin()?`<button class="btn primary" data-act="live:startBlock" data-id="${id}">${I.play.replace('<svg','<svg style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:4px"')}Start timer</button>`:''}<button class="btn ${b.live||!(b.date===todayYmd()&&blockEnd(b)>nowMin())?'primary':''}" data-act="block:focus" data-id="${id}">Focus</button><button class="btn ${b.anchored?'anchored':''}" data-act="block:anchor" data-id="${id}" aria-pressed="${!!b.anchored}">${ico('anchor',2.2).replace('<svg','<svg style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:5px"')}${b.anchored?'Anchored':'Anchor in'}</button>${left?`<button class="btn" data-act="focus:moveLeft" data-id="${id}">Move what’s left</button>`:''}</div>
+    <div class="btnrow">${b.live?`<button class="btn primary" data-act="live:stop" style="--c:#FF453A">Stop timer · <span class="trun tabular" data-start="${b.liveStart}">${fmtClock(liveElapsedSec(b))}</span></button><button class="btn" data-act="${b.paused?'live:resume':'live:pause'}">${b.paused?'Resume':'Pause'}</button>`:b.date===todayYmd()&&blockEnd(b)>nowMin()?`<button class="btn primary" data-act="live:startBlock" data-id="${id}">${I.play.replace('<svg','<svg style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:4px"')}Start timer</button>`:''}<button class="btn ${b.live||!(b.date===todayYmd()&&blockEnd(b)>nowMin())?'primary':''}" data-act="block:focus" data-id="${id}">Focus</button><button class="btn ${b.anchored?'anchored':''}" data-act="block:anchor" data-id="${id}" aria-pressed="${!!b.anchored}">${ico('anchor',2.2).replace('<svg','<svg style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:5px"')}${b.anchored?'Anchored':'Anchor in'}</button>${left?`<button class="btn" data-act="focus:moveLeft" data-id="${id}">Move what’s left</button>`:''}</div>
     ${b.anchored?`<div class="fnote" style="padding-top:10px">Anchored: the timer, “Push the rest of today”, “Fix overlaps” and smart scheduling won’t move this block. You still can, by dragging it.</div>`:''}
     ${b.untitled?`<div class="card" style="margin-top:14px"><button class="frow" data-act="live:nameOpen" data-id="${id}" style="width:100%"><label style="min-width:0;flex:1;color:var(--tint)">${b.live?'What is this time for?':'What was this time for?'}</label>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>`:''}
     <div class="card" style="margin-top:14px"><button class="frow" data-act="block:delete" data-id="${id}" style="width:100%;justify-content:center;color:var(--red);font-weight:500">Delete block</button></div>
@@ -1554,10 +1560,14 @@ function settingsSheet(){return()=>{
       <div class="frow"><label>Lunch</label><select data-act="setting" data-key="lunch">${[[-1,'Don’t reserve'],[720,'12:00, 30 min'],[750,'12:30, 30 min'],[780,'13:00, 30 min']].map(([m,l])=>`<option value="${m}" ${(P().lunch??-1)===m?'selected':''}>${l}</option>`).join('')}</select></div>
       <div class="frow"><label style="min-width:0;flex:1">Roll over unfinished<small style="display:block;font-size:13px;color:var(--label2)">Each morning, yesterday’s open to dos move to today</small></label><button class="switch ${P().rollover?'on':''}" data-act="sched:rollover" role="switch" aria-checked="${P().rollover}" aria-label="Roll over unfinished"></button></div></div>
     <div class="card" style="margin-top:14px"><div class="frow"><label style="min-width:0;flex:1">Block start and end alerts<small style="display:block;font-size:13px;color:var(--label2)">${canNotify?'Only while this page is open':'Not available in this browser'}</small></label><button class="switch ${s.notify?'on':''}" data-act="notify:toggle" role="switch" aria-checked="${!!s.notify}" aria-label="Alerts" ${canNotify?'':'disabled'}></button></div></div>
-    <div class="fnote" style="padding-top:14px">Focus timer</div><div class="card" style="margin-top:6px">
+    <div class="fnote" style="padding-top:14px">Timer</div><div class="card" style="margin-top:6px">
       <div class="frow"><label>Focus</label><select data-act="setting" data-key="pomoWork">${[15,20,25,30,45,50,60,90].map(m=>`<option value="${m}" ${(s.pomoWork||25)===m?'selected':''}>${m} min</option>`).join('')}</select></div>
       <div class="frow"><label>Break</label><select data-act="setting" data-key="pomoBreak">${[3,5,10,15].map(m=>`<option value="${m}" ${(s.pomoBreak||5)===m?'selected':''}>${m} min</option>`).join('')}</select></div>
       <div class="frow"><label>Long break</label><select data-act="setting" data-key="pomoLong">${[10,15,20,30].map(m=>`<option value="${m}" ${(s.pomoLong||15)===m?'selected':''}>${m} min, every 4th</option>`).join('')}</select></div>
+      <div class="frow"><label>Check in after</label><select data-act="setting" data-key="timerNudge">${[[60,'1 hour'],[120,'2 hours'],[180,'3 hours'],[0,'Never']].map(([m,l])=>`<option value="${m}" ${(s.timerNudge??120)===m?'selected':''}>${l}</option>`).join('')}</select></div>
+      <div class="frow"><label style="min-width:0;flex:1">Work hours project<small style="display:block;font-size:13px;color:var(--label2)">Blank timers ${fmtTimeShort(s.workFrom??540)}–${fmtTimeShort(s.workTo??1020)} on weekdays</small></label><select data-act="setting" data-key="workProject" data-str="1"><option value="">None</option>${Object.values(state.projects).sort((a,b)=>a.name.localeCompare(b.name)).map(p=>`<option value="${p.id}" ${s.workProject===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
+      <div class="frow"><label>Work hours</label><select data-act="setting" data-key="workFrom">${[360,420,480,510,540,600].map(m=>`<option value="${m}" ${(s.workFrom??540)===m?'selected':''}>${fmtTimeShort(m)}</option>`).join('')}</select><span style="color:var(--label2);font-size:15px">to</span><select data-act="setting" data-key="workTo" style="margin-left:0">${[900,960,1020,1050,1080,1140].map(m=>`<option value="${m}" ${(s.workTo??1020)===m?'selected':''}>${fmtTimeShort(m)}</option>`).join('')}</select></div>
+      <div class="frow"><label style="min-width:0;flex:1">Other times project</label><select data-act="setting" data-key="offProject" data-str="1"><option value="">None</option>${Object.values(state.projects).sort((a,b)=>a.name.localeCompare(b.name)).map(p=>`<option value="${p.id}" ${s.offProject===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
       <div class="frow"><label style="min-width:0;flex:1">Chime</label><button class="switch ${s.chime!==false?'on':''}" data-act="pomo:chime" role="switch" aria-checked="${s.chime!==false}" aria-label="Chime"></button></div></div>
     <div class="card" style="margin-top:14px"><button class="frow" data-act="cal:open" style="width:100%"><label style="min-width:0;flex:1">Calendars<small style="display:block;font-size:13px;color:var(--label2)">${calList().length?calList().length+' connected, shown read-only':'Show events from Google, Outlook or iCloud'}</small></label>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>
     <div class="card" style="margin-top:14px"><div class="frow"><label style="min-width:0;flex:1">Completed to dos<small style="display:block;font-size:13px;color:var(--label2)">${tasksArr().filter(t=>t.done).length} done</small></label><button class="btn sm" data-act="done:clear">Clear all</button></div>
@@ -1725,7 +1735,7 @@ function handle(act,el,e){
     case'days:set':state.settings.days=+el.dataset.n;setCalView('day',true);saveSettings();syncRoutines();renderApp();break;
     case'proj:select':selectProject(el.dataset.pid);break;
     case'settings:open':openSheet(settingsSheet());break;
-    case'setting':{const k=el.dataset.key;let v=el.value;if(k!=='theme')v=+v;state.settings[k]=v;if(state.settings.dayEnd<=state.settings.dayStart)state.settings.dayEnd=state.settings.dayStart+1;saveSettings();renderApp();break}
+    case'setting':{const k=el.dataset.key;let v=el.value;if(k!=='theme'&&!el.dataset.str)v=+v;state.settings[k]=v;if(state.settings.dayEnd<=state.settings.dayStart)state.settings.dayEnd=state.settings.dayStart+1;saveSettings();renderApp();break}
     case'notify:toggle':toggleNotify();break;
     case'list:menu':openSheet(listMenu());break;
     case'done:toggle':ui.showDone=!ui.showDone;closeAllSheets();renderApp();break;
@@ -2131,6 +2141,7 @@ Object.assign(ui,{mode:'list',showBacklog:true});
 try{const m=localStorage.getItem(LS_KEY+':mode');if(m)ui.mode=m}catch(e){}
 state.days=state.days||{};state.objectives=state.objectives||{};
 I.play='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>';
+I.pause='<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4.2" height="14" rx="1.4"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.4"/></svg>';
 I.stop='<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>';
 const SPARK_SM='<svg viewBox="0 0 24 24" fill="currentColor" style="width:13px;height:13px"><path d="M12 2.5c.4 3.9 2.6 6.1 6.5 6.5-3.9.4-6.1 2.6-6.5 6.5-.4-3.9-2.6-6.1-6.5-6.5 3.9-.4 6.1-2.6 6.5-6.5z"/></svg>';
 const capacity=()=>state.settings.capacity||480;
@@ -2146,13 +2157,13 @@ const ESTS=[15,30,45,60,90,120,180];
 function planTask(id,date){const t=state.tasks[id];if(!t)return;const b=t.blockId&&state.blocks[t.blockId];const n={...t,due:date||null};if(!date||(b&&b.date!==date))n.blockId=null;put('tasks',id,n);renderApp();refreshSheet()}
 function timerTask(){return tasksArr().find(t=>t.timerStart)}
 function stopTimer(id){const t=state.tasks[id];if(!t||!t.timerStart)return;put('tasks',id,{...t,timerStart:null,actual:(t.actual||0)+Math.max(1,Math.round((Date.now()-t.timerStart)/60000))})}
-function toggleTimer(id){const t=state.tasks[id];if(!t)return;const lb=liveBlock();if(t.timerStart||(lb&&lb.liveTask===id)){stopLive();return}startLive({taskId:id})}
-function tickTimer(){$$('.trun').forEach(el=>{el.textContent=fmtClock((Date.now()-(+el.dataset.start))/1000)})}
+function toggleTimer(id){const t=state.tasks[id];if(!t)return;const lb=liveBlock();if(lb&&lb.liveTask===id&&lb.paused){resumeLive();return}if(t.timerStart||(lb&&lb.liveTask===id)){stopLive();return}startLive({taskId:id})}
+function tickTimer(){const lb=liveBlock();$$('.trun').forEach(el=>{const st=+el.dataset.start;el.textContent=fmtClock(lb&&st===lb.liveStart?liveElapsedSec(lb):(Date.now()-st)/1000)})}
 function toggleTask(id){
   const t=state.tasks[id];if(!t)return;haptic(10);
   $$(`.check[data-id="${id}"]`).forEach(c=>{c.classList.toggle('on',!t.done);c.classList.add('pulse')});
   const chk=$(`.check[data-id="${id}"]`);const cr=chk&&chk.getBoundingClientRect();
-  const commit=()=>{let cur=state.tasks[id]||t;const lb=liveBlock();if(!t.done&&lb&&lb.liveTask===id){stopLive({silent:true});cur=state.tasks[id]||cur}const n={...cur,done:!t.done,doneAt:!t.done?Date.now():null};if(n.done&&n.timerStart){n.actual=(n.actual||0)+Math.max(1,Math.round((Date.now()-n.timerStart)/60000));n.timerStart=null}put('tasks',id,n);renderApp();refreshSheet();if(n.done)celebrate(n,cr)};
+  const commit=()=>{const snap=snapshotState();let cur=state.tasks[id]||t;const lb=liveBlock();if(!t.done&&lb&&lb.liveTask===id){stopLive({silent:true});cur=state.tasks[id]||cur}const n={...cur,done:!t.done,doneAt:!t.done?Date.now():null};UNDO_DONE={snap,title:n.title};if(n.done&&n.timerStart){n.actual=(n.actual||0)+Math.max(1,Math.round((Date.now()-n.timerStart)/60000));n.timerStart=null}put('tasks',id,n);renderApp();refreshSheet();if(n.done){toast(`Done: ${n.title}`,undoDone());celebrate(n,cr)}};
   if(!t.done){if(cr)burst(cr.left+cr.width/2,cr.top+cr.height/2,colorOf(t.projectId)==='#8E8E93'?'#0A84FF':colorOf(t.projectId),true);const rows=$$(`.task[data-task="${id}"]`).filter(r=>r.closest('.draggable'));rows.forEach(r=>{r.style.height=r.offsetHeight+'px';setTimeout(()=>r.classList.add('removing'),260)});setTimeout(commit,rows.length?700:260)}
   else setTimeout(commit,200);
 }
@@ -2193,6 +2204,7 @@ function taskSheet(id){return()=>{
       <button type="button" class="frow" data-act="task:pick" data-id="${id}" style="width:100%"><label>Block</label><span class="val">${b?`<i class="pdot" style="background:${colorOf(b.projectId)}"></i>${esc(b.title)}, ${fmtDay(b.date)}`:'None'}</span>${I.chevR.replace('<svg','<svg class="chevr"')}</button>
       ${b?`<button type="button" class="frow" data-act="task:unblock" data-id="${id}" style="width:100%;justify-content:center;color:var(--tint)">Take out of block</button>`:''}
       ${t.done?'':`<button type="button" class="frow" data-act="sched:find" data-id="${id}" style="width:100%"><label style="min-width:0;flex:1;color:var(--tint)">Find a time</label>${I.chevR.replace('<svg','<svg class="chevr"')}</button>`}
+      <button type="button" class="frow" data-act="time:add" data-id="${id}" style="width:100%"><label style="min-width:0;flex:1;color:var(--tint)">Add time</label><span class="val">${t.actual?fmtDur(t.actual)+' logged':''}</span>${I.chevR.replace('<svg','<svg class="chevr"')}</button>
       ${t.done?'':`<button type="button" class="frow" data-act="timer:toggle" data-id="${id}" style="width:100%"><label style="min-width:0;flex:1;color:${t.timerStart?'var(--red)':'var(--tint)'}">${t.timerStart?'Stop timer':'Start timer'}</label>${t.timerStart?`<span class="val trun tabular" data-start="${t.timerStart}">${fmtClock((Date.now()-t.timerStart)/1000)}</span>`:''}</button>`}
     </div>
     <div class="card" style="margin-top:14px"><button type="button" class="frow" data-act="task:delete" data-id="${id}" style="width:100%;justify-content:center;color:var(--red);font-weight:500">Delete to do</button></div>
@@ -2360,7 +2372,7 @@ function handleExtra(act,el,e){
   }
 }
 document.addEventListener('input',e=>{const el=e.target;if(!R)return;if(el.dataset.act==='ritual:obj')R.obj=el.value;if(el.dataset.act==='ritual:refl')R.refl=el.value});
-setInterval(()=>{tickTimer();tickLive()},1000);setInterval(()=>liveTick(),30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)liveTick()});
+setInterval(()=>{tickTimer();tickLive()},1000);setInterval(()=>liveTick(),30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)liveCatchUp()});setTimeout(liveCatchUp,1200);
 
 /* ============ more: steps, tags, search, shortcuts, focus timer, calendars, archive, streaks ============ */
 PI.search='<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>';
@@ -2415,9 +2427,11 @@ function afterRender(){requestAnimationFrame(()=>requestAnimationFrame(()=>$$('.
 /* ---- celebrations ---- */
 function burst(x,y,color,small){const b=document.createElement('div');b.className='burst'+(small?' sm':'');b.style.cssText=`left:${x}px;top:${y}px;--c:${color}`;const n=small?6:12;
   b.innerHTML='<i class="ring"></i>'+Array.from({length:n},(_,k)=>`<i class="dot" style="--a:${k*360/n}deg;--d:${small?(k%2?18:24):(k%2?40:56)}px"></i>`).join('');document.body.appendChild(b);setTimeout(()=>b.remove(),900)}
+let UNDO_DONE=null;
+const undoDone=()=>({label:'Undo',fn:()=>{if(UNDO_DONE){restoreSnapshot(UNDO_DONE.snap);UNDO_DONE=null}}});
 function celebrate(t,cr){const today=todayYmd();const left=tasksForDay(today).filter(x=>!x.done).length;const x=cr?cr.left+cr.width/2:innerWidth/2,y=cr?cr.top+cr.height/2:innerHeight/2;
-  if(taskDay(t)===today&&!left&&tasksForDay(today).length>1){setTimeout(()=>{burst(innerWidth/2,innerHeight*.45,'#30D158');haptic([12,40,12]);toast('That’s everything for today')},80);return}
-  const b=t.blockId&&state.blocks[t.blockId];if(b&&tasksIn(b.id).length>1&&tasksIn(b.id).every(x=>x.done)){const el=$(`.block[data-id="${b.id}"]`);const r=el&&el.getBoundingClientRect();burst(r?r.left+r.width/2:x,r?r.top+Math.min(r.height,60)/2:y,colorOf(b.projectId));toast(b.title+' cleared')}}
+  if(taskDay(t)===today&&!left&&tasksForDay(today).length>1){setTimeout(()=>{burst(innerWidth/2,innerHeight*.45,'#30D158');haptic([12,40,12]);toast('That’s everything for today',undoDone())},80);return}
+  const b=t.blockId&&state.blocks[t.blockId];if(b&&tasksIn(b.id).length>1&&tasksIn(b.id).every(x=>x.done)){const el=$(`.block[data-id="${b.id}"]`);const r=el&&el.getBoundingClientRect();burst(r?r.left+r.width/2:x,r?r.top+Math.min(r.height,60)/2:y,colorOf(b.projectId));toast(b.title+' cleared',undoDone())}}
 
 /* ---- ritual banners ---- */
 function syncBanner(){if(!(isIOS()&&isStandaloneApp())||(secrets.token&&sync.gistId))return'';try{if(localStorage.getItem(LS_KEY+':syncbanner'))return''}catch(e){}
@@ -2715,57 +2729,90 @@ function handleView(act,el){
 
 /* ---- live timer: a block that grows with the clock and pushes whatever it runs into ---- */
 const liveBlock=()=>Object.values(state.blocks).find(b=>b.live);
-const liveElapsedSec=b=>Math.max(0,(Date.now()-(b.liveStart||Date.now()))/1000);
+/* paused time is left out of everything the timer counts */
+const livePausedMs=b=>(b.pausedMs||0)+(b.paused?Date.now()-b.paused:0);
+const liveElapsedSec=b=>Math.max(0,(Date.now()-(b.liveStart||Date.now())-livePausedMs(b))/1000);
 const liveColor=b=>{const c=colorOf(b.projectId);return c===NOCOLOR?'#FF453A':c};
-function liveChip(){const b=liveBlock();if(!b||b.date!==todayYmd())return'';return`<button class="livechip press" data-act="live:stop" style="--c:${liveColor(b)}" aria-label="Stop the timer"><i></i><span class="trun tabular" data-start="${b.liveStart}">${fmtClock(liveElapsedSec(b))}</span></button>`}
-function tapTimer(){const lb=liveBlock();if(lb){toast('Timer is already running. Tap the red pill to stop it.');return}startLive({});setTimeout(()=>toast('Timer started. Hold on the calendar instead to add a block.'),0)}
+function liveChip(){const b=liveBlock();if(!b||b.date!==todayYmd())return'';return`<button class="livechip press ${b.paused?'paused':''}" data-act="live:stop" style="--c:${liveColor(b)}" aria-label="Stop the timer"><i></i><span class="trun tabular" data-start="${b.liveStart}">${fmtClock(liveElapsedSec(b))}</span></button>`}
+function tapTimer(){const lb=liveBlock();if(lb){toast(lb.paused?'Timer is paused. Tap ▶ to resume or the pill to stop.':'Timer is already running. Tap the red pill to stop it.');return}startLive({});setTimeout(()=>toast('Timer started. Hold on the calendar instead to add a block.'),0)}
+/* which project a blank timer starts in, from Settings → Timer */
+function defaultProjectNow(){const s=state.settings;const d=new Date();const wd=d.getDay();const m=d.getHours()*60+d.getMinutes();
+  const work=(s.workDays||[1,2,3,4,5]).includes(wd)&&m>=(s.workFrom??540)&&m<(s.workTo??1020);const pid=work?s.workProject:s.offProject;return pid&&state.projects[pid]?pid:null}
 function startLive(o={}){
   if(liveBlock())stopLive({silent:true});
   const t=todayYmd(),n=nowMin();const task=o.taskId&&state.tasks[o.taskId];let b=o.blockId&&state.blocks[o.blockId]||null;
   if(!b&&task&&task.blockId){const tb=state.blocks[task.blockId];if(tb&&tb.date===t&&tb.start<=n&&n<blockEnd(tb))b=tb}
   if(b&&b.date===t&&blockEnd(b)>n){
     /* a block happening now keeps going; one later today starts now */
-    put('blocks',b.id,{...b,start:Math.min(b.start,n),live:true,liveStart:Date.now(),liveTask:task?task.id:(b.liveTask||null)});b=state.blocks[b.id];
+    put('blocks',b.id,{...b,start:Math.min(b.start,n),live:true,liveStart:Date.now(),pausedMs:0,paused:null,liveTask:task?task.id:(b.liveTask||null)});b=state.blocks[b.id];
   }else{
-    const title=o.title||(task?task.title:'');const pid=o.projectId!==undefined?o.projectId:(task?task.projectId:(currentProject()?currentProject().id:null));
-    const id=uid('b');b={id,title:title||'Untitled time',untitled:!title,date:t,start:n,duration:5,projectId:pid||null,live:true,liveStart:Date.now(),liveTask:task?task.id:null,fromTimer:true,createdAt:Date.now()};put('blocks',id,b);
+    const title=o.title||(task?task.title:'');const pid=o.projectId!==undefined?o.projectId:(task?task.projectId:(defaultProjectNow()||(currentProject()?currentProject().id:null)));
+    const id=uid('b');b={id,title:title||'Untitled time',untitled:!title,date:t,start:n,duration:5,projectId:pid||null,live:true,liveStart:Date.now(),pausedMs:0,liveTask:task?task.id:null,fromTimer:true,createdAt:Date.now()};put('blocks',id,b);
   }
-  if(task)put('tasks',task.id,{...state.tasks[task.id],timerStart:Date.now()});
+  if(task)put('tasks',task.id,{...state.tasks[task.id],timerStart:Date.now(),timerAcc:0});
   haptic(10);liveTick(true);renderApp();refreshSheet();
   toast(task?'Timing “'+task.title+'”':b.untitled?'Timer started. Say what it’s for when you stop.':'Timing “'+b.title+'”');return b}
+/* minutes of a task's current timing, pauses left out */
+const taskTimedMs=t=>(t.timerAcc||0)+(t.timerStart?Date.now()-t.timerStart:0);
+function pauseLive(){const b=liveBlock();if(!b||b.paused)return;put('blocks',b.id,{...b,paused:Date.now()});
+  const t=b.liveTask&&state.tasks[b.liveTask];if(t&&t.timerStart)put('tasks',t.id,{...t,timerAcc:taskTimedMs(t),timerStart:null,timerPaused:true});
+  haptic(8);renderApp();refreshSheet();toast('Paused. Nothing moves while it’s paused.')}
+function resumeLive(){const b=liveBlock();if(!b||!b.paused)return;put('blocks',b.id,{...b,pausedMs:(b.pausedMs||0)+(Date.now()-b.paused),paused:null});
+  const t=b.liveTask&&state.tasks[b.liveTask];if(t&&t.timerPaused)put('tasks',t.id,{...t,timerStart:Date.now(),timerPaused:false});
+  haptic(8);liveTick(true);renderApp();refreshSheet();toast('Resumed')}
 function stopLive(o={}){
-  const b=liveBlock();if(!b)return null;
+  let b=liveBlock();if(!b)return null;if(b.paused){put('blocks',b.id,{...b,pausedMs:(b.pausedMs||0)+(Date.now()-b.paused),paused:null});b=state.blocks[b.id]}
   const today=b.date===todayYmd();const real=Math.max(1,Math.round(liveElapsedSec(b)/60));
   /* the timer ends on the half hour: the block, the logged time and the message all use the rounded figure */
   const mins=roundTo30(real);
   const task=b.liveTask&&state.tasks[b.liveTask];
-  if(task&&task.timerStart)put('tasks',task.id,{...task,timerStart:null,actual:(task.actual||0)+roundTo30(Math.max(1,Math.round((Date.now()-task.timerStart)/60000)))});
+  if(task&&(task.timerStart||task.timerAcc))put('tasks',task.id,{...task,timerStart:null,timerAcc:0,timerPaused:false,actual:(task.actual||0)+roundTo30(Math.max(1,Math.round(taskTimedMs(task)/60000)))});
   /* a timer-made block is as long as the rounded run; a scheduled block only grows if the timer ran past its end */
-  const ran=today?Math.max(real,nowMin()+1-b.start):real;
-  let duration=b.fromTimer?roundTo30(ran):Math.max(b.duration,roundTo30(ran));duration=Math.max(MIN_BLOCK,Math.min(1440-b.start,duration));
-  const nb={...b,duration};delete nb.live;delete nb.liveStart;delete nb.ran;put('blocks',b.id,nb);
-  renderApp();refreshSheet();
+  const ran=today?Math.max(real,nowMin()+1-b.start-Math.round((b.pausedMs||0)/60000)):real;
+  let duration=b.fromTimer?roundTo30(real):Math.max(b.duration,roundTo30(ran));duration=Math.max(MIN_BLOCK,Math.min(1440-b.start,duration));
+  const nb={...b,duration};['live','liveStart','ran','paused','pausedMs'].forEach(k=>delete nb[k]);put('blocks',b.id,nb);
+  liveNudged.delete(b.id);renderApp();refreshSheet();
   if(o.silent)return nb;
   if(nb.untitled){closeAllSheets();openSheet(whatForSheet(nb.id))}else toast('Logged '+fmtDur(mins)+(task?' on “'+task.title+'”':''));
   return nb}
-const liveSaid=new Set();
+const liveSaid=new Set();const liveNudged=new Map();
+/* the far edge of the running timer on the calendar, in minutes (pauses shrink it) */
+const liveEndMin=b=>b.start+Math.max(b.fromTimer?1:b.duration,nowMin()+1-b.start);
 function liveTick(force){
   const b=liveBlock();if(!b)return false;const t=todayYmd();
   if(b.date!==t){stopLive({silent:true});toast('Timer stopped at midnight');return true}
-  const p=P();const n=nowMin();let cursor=Math.max(Math.ceil((n+1+p.buffer)/5)*5,b.fromTimer?0:Math.ceil((b.start+b.duration+p.buffer)/5)*5);const moved=[];
+  if(b.paused){const every=state.settings.timerNudge??120;const el=liveElapsedSec(b)/60;
+  if(every&&!b.paused&&el>=every){const k=Math.floor(el/every);if((liveNudged.get(b.id)||0)<k){liveNudged.set(b.id,k);const name=b.untitled?'this timer':'“'+b.title+'”';
+    notifyNow('Still going?',`${b.untitled?'Your timer':b.title} has been running ${fmtDur(Math.round(el))}`);
+    toast(`Still working on ${name}? It’s been ${fmtDur(Math.round(el))}.`,{label:'Stop',fn:()=>stopLive()})}}return false}
+  const p=P();let cursor=Math.ceil((liveEndMin(b)+p.buffer)/5)*5;if(!b.fromTimer)cursor=Math.max(cursor,Math.ceil((b.start+b.duration+p.buffer)/5)*5);const moved=[];
   /* anything scheduled after the timer began that it has now reached slides along ahead of it, and so does whatever that bumps into */
   for(const x of blocksOn(t).filter(x=>x.id!==b.id&&movable(x)&&x.start>=b.start).sort((a,c)=>a.start-c.start)){
     if(x.start<cursor){const ns=pastAnchors(t,Math.min(1440-x.duration,cursor),x.duration,x.id);if(ns!==x.start){put('blocks',x.id,{...x,start:ns});moved.push(state.blocks[x.id])}cursor=ns+x.duration+p.buffer}
   }
   if(moved.length){const fresh=moved.filter(x=>!liveSaid.has(x.id+':'+x.start));fresh.forEach(x=>liveSaid.add(x.id+':'+x.start));
-    if(fresh.length&&!force)toast(fresh.length===1?`Moved “${fresh[0].title}” to ${fmtTimeShort(fresh[0].start)} while the timer runs`:`Moved ${fresh.length} blocks later while the timer runs`);
-    if(!force)renderApp()}
+    if(fresh.length&&(!force||force==='away'))toast(force==='away'?`While you were away the timer pushed ${fresh.length} block${fresh.length===1?'':'s'} later`:fresh.length===1?`Moved “${fresh[0].title}” to ${fmtTimeShort(fresh[0].start)} while the timer runs`:`Moved ${fresh.length} blocks later while the timer runs`);
+    if(!force||force==='away')renderApp()}
+  /* check in after a long run */
+  const every=state.settings.timerNudge??120;const el=liveElapsedSec(b)/60;
+  if(every&&!b.paused&&el>=every){const k=Math.floor(el/every);if((liveNudged.get(b.id)||0)<k){liveNudged.set(b.id,k);const name=b.untitled?'this timer':'“'+b.title+'”';
+    notifyNow('Still going?',`${b.untitled?'Your timer':b.title} has been running ${fmtDur(Math.round(el))}`);
+    toast(`Still working on ${name}? It’s been ${fmtDur(Math.round(el))}.`,{label:'Stop',fn:()=>stopLive()})}}
   return moved.length>0}
 function tickLive(){
-  const b=liveBlock();if(!b||b.date!==todayYmd())return;const el=$(`.block.live[data-id="${b.id}"]`);if(!el)return;
+  const b=liveBlock();if(!b||b.date!==todayYmd()||b.paused)return;const el=$(`.block.live[data-id="${b.id}"]`);if(!el)return;
   const hs=state.settings.dayStart*60,he=state.settings.dayEnd*60,hh=hourPx();const d=new Date();const nowF=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
-  const end=Math.min(he,Math.max(b.start+b.duration,nowF));const s=Math.max(b.start,hs);el.style.height=Math.max(30,(end-s)/60*hh-4)+'px';
+  const end=Math.min(he,Math.max(b.start+(b.fromTimer?1:b.duration),nowF));const s=Math.max(b.start,hs);el.style.height=Math.max(30,(end-s)/60*hh-4)+'px';
 }
+/* coming back to the app: catch up on everything the timer ran into while it was closed */
+function liveCatchUp(){if(!liveBlock())return;const moved=liveTick('away');if(!moved)renderApp()}
+function addTimeSheet(id){return()=>{const t=state.tasks[id];if(!t)return`${snav('Add time',{act:'sheet:close',label:'Close'})}<div class="sbody"><div class="empty">This to do was removed.</div></div>`;
+  return`${snav('Add time',{act:'sheet:close',label:'Cancel'},{act:'noop',label:'Add',form:'timeForm'})}<div class="sbody"><form id="timeForm" data-act="time:save" data-id="${id}">
+    <div class="fnote" style="padding:0 0 10px">${esc(t.title)}${t.actual?` · ${fmtDur(t.actual)} logged so far`:''}</div>
+    <div class="card"><div class="chips">${[15,30,45,60,90,120].map(m=>`<button type="button" class="chip ${m===30?'on':''}" data-act="chip:set" data-name="mins" data-value="${m}">${fmtDur(m)}</button>`).join('')}</div>
+      <div class="frow"><label>Minutes</label><input name="custom" type="number" min="1" max="1440" placeholder="or type" style="text-align:right" aria-label="Minutes"></div></div><input type="hidden" name="mins" value="30">
+    <div class="card" style="margin-top:14px"><div class="frow"><label style="min-width:0;flex:1">Put it on the calendar<small style="display:block;font-size:13px;color:var(--label2)">As a block ending now</small></label><button type="button" class="switch" data-act="time:cal" role="switch" aria-checked="false" aria-label="Put it on the calendar"></button><input type="hidden" name="cal" value=""></div></div>
+  </form></div>`}}
 function whatForSheet(id){return()=>{const b=state.blocks[id];if(!b)return`${snav('Time logged',{act:'sheet:close',label:'Close'})}<div class="sbody"><div class="empty">This block was removed.</div></div>`;
   const cands=sortTasks(tasksArr().filter(t=>!t.done)).slice(0,12);
   return`${snav('What was that for?',{act:'live:skip',id,label:'Later'},{act:'noop',label:'Save',form:'whatForm'})}<div class="sbody"><form id="whatForm" data-act="live:name" data-id="${id}">
@@ -2781,6 +2828,14 @@ function handleLive(act,el){
     case'live:start':startLive({});return true;
     case'live:startBlock':closeAllSheets();startLive({blockId:id});return true;
     case'live:stop':stopLive();return true;
+    case'time:add':{const f=el.closest('form');if(f)saveTaskForm(f);openSheet(addTimeSheet(id));return true}
+    case'time:cal':{const on=!el.classList.contains('on');el.classList.toggle('on',on);el.setAttribute('aria-checked',on);el.parentElement.querySelector('input[name=cal]').value=on?'1':'';return true}
+    case'time:save':{const d=readForm(el);const t=state.tasks[id];if(!t)return true;const m=Math.max(1,Math.min(1440,parseInt(d.custom)||parseInt(d.mins)||30));const snap=snapshotState();
+      put('tasks',id,{...t,actual:(t.actual||0)+m});
+      if(d.cal){const end=nowMin();const start=Math.max(0,end-Math.max(MIN_BLOCK,m));const bid=createBlock({title:t.title,date:todayYmd(),start,duration:end-start,projectId:t.projectId||null});if(!t.blockId)put('tasks',id,{...state.tasks[id],blockId:bid})}
+      closeSheet();renderApp();refreshSheet();toast(`Added ${fmtDur(m)} to “${t.title}”`,{label:'Undo',fn:()=>restoreSnapshot(snap)});return true}
+    case'live:pause':pauseLive();return true;
+    case'live:resume':resumeLive();return true;
     case'live:nameOpen':closeAllSheets();openSheet(whatForSheet(id));return true;
     case'live:skip':closeSheet();toast('Kept as “Untitled time”');return true;
     case'live:name':{const d=readForm(el);const b=state.blocks[id];if(!b)return true;const title=(d.title||'').trim();
@@ -2837,7 +2892,7 @@ document.addEventListener('click',e=>{const c=e.target.closest('#whatForm [data-
 })();
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.7.3';
+const APP_VERSION='1.8.0';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);

@@ -1,4 +1,4 @@
 {
-  "version": "1.7.3",
-  "notes": "Smart tagging only re-files a to do from the Inbox, and says where it went"
+  "version": "1.8.0",
+  "notes": "Timer pause, catch-up, check-in and default projects; undo for done; add time by hand"
 }
