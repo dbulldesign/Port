@@ -1,4 +1,4 @@
 {
-  "version": "1.12.2",
-  "notes": "#\"Project\" in a block or timer name sets the project and is removed from the name"
+  "version": "1.12.3",
+  "notes": "#Project Name without quotes, with suggestions as you type"
 }

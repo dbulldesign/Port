@@ -794,6 +794,8 @@ body.selecting .task.compact.sel .inner::after{left:20px}
 .tl-grid.cmp .block .bic svg{width:11px;height:11px}
 .tl-grid.cmp .block .bt{font-size:13px}
 .tl-grid.cmp .block .bm,.tl-grid.cmp .block ul{margin-left:0;font-size:12px}
+.projsugg{display:flex;gap:6px;flex-wrap:wrap;padding:8px 16px 12px;background:var(--card)}
+.projsugg .chip{font-size:14px;padding:6px 11px}
 .qa{font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--label2);background:var(--fill2);border-radius:8px;padding:8px 10px;margin:6px 0 10px;word-break:break-all}
 code{font:12px ui-monospace,Menlo,monospace;background:var(--fill2);padding:1px 5px;border-radius:5px}
 .mday{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
@@ -1200,7 +1202,8 @@ function parseCapture(raw){
   const out={title:'',projectName:null,urgency:0,due:null,dueTime:null};
   /* #"Project Name" or @"Project Name" (straight or curly quotes) names a project, new or existing */
   text=text.replace(/\s[#@](?:"([^"]+)"|“([^”]+)”|'([^']+)'|‘([^’]+)’)/,(m,a,b,c,d)=>{out.projectName=(a||b||c||d).trim();return' '});
-  /* #word that is an existing project's name means that project, not a tag */
+  /* #Name of an existing project (several words are fine) means that project, not a tag */
+  if(!out.projectName){const h=hashProject(text);if(h){out.projectName=h.p.name;text=text.slice(0,h.i)+' '+text.slice(h.i+h.len)}}
   text=text.replace(/\s#([A-Za-z][\w-]*)(?=[\s.,])/g,(m,g)=>{if(!out.projectName){const ex=projectByName(g);if(ex){out.projectName=ex.name;return' '}}(out.tags=out.tags||[]).includes(g.toLowerCase())||out.tags.push(g.toLowerCase());return' '});
   text=text.replace(/\s(!{1,3})(?=\s)/,(m,b)=>{out.urgency=b.length;return' '});
   text=text.replace(/\s@([^\s@!]+)/,(m,n)=>{out.projectName=n;return' '});
@@ -1237,10 +1240,31 @@ function parseCapture(raw){
 }
 const projectByName=n=>{const l=String(n||'').trim().toLowerCase();return l?Object.values(state.projects).find(p=>p.name.toLowerCase()===l)||null:null};
 const PROJ_TAG=/(^|\s)[#@](?:"([^"]+)"|“([^”]+)”|'([^']+)'|‘([^’]+)’)/;
-function takeProjectTag(text){let t=String(text||'');let name=null;
+/* #Name with no quotes: the longest existing project the words after # start with */
+function hashProject(text){const t=String(text||'');const low=t.toLowerCase();let best=null;
+  for(let i=0;i<t.length;i++){if(t[i]!=='#'||(i>0&&!/\s/.test(t[i-1]))||/["“'‘]/.test(t[i+1]||''))continue;const rest=low.slice(i+1);
+    for(const p of Object.values(state.projects)){const n=p.name.toLowerCase();if(rest.startsWith(n)&&!/[\p{L}\p{N}]/u.test(rest[n.length]||'')&&(!best||n.length>best.len))best={i,len:n.length+1,p}}}
+  return best}
+/* the last bare #… in a title, for suggestions and for making a new project */
+const niceName=n=>n===n.toLowerCase()?n.replace(/(^|\s)(\p{L})/gu,(m,a,b)=>a+b.toUpperCase()):n;
+const hashTail=t=>{const m=String(t||'').match(/(^|\s)#(?!["“'‘])([^#]*)$/);return m?{at:m.index+m[1].length,q:m[2]}:null};
+function takeProjectTag(text,o={}){let t=String(text||'');let name=null;
   const m=t.match(PROJ_TAG);if(m){name=(m[2]||m[3]||m[4]||m[5]).trim();t=t.replace(m[0],m[1])}
-  else{const w=t.match(/(^|\s)#([A-Za-z][\w-]*)(?=\s|$)/);if(w&&projectByName(w[2])){name=projectByName(w[2]).name;t=t.replace(w[0],w[1])}}
+  else{const h=hashProject(t);if(h){name=h.p.name;t=t.slice(0,h.i)+t.slice(h.i+h.len)}
+    else if(o.create){const tl=hashTail(t);if(tl&&tl.q.trim()){name=niceName(tl.q.trim());t=t.slice(0,tl.at)}}}
   return{text:t.replace(/\s+/g,' ').trim(),name}}
+/* suggestions under a title while typing #… */
+function projSuggest(el){const f=el.form;let box=f.querySelector('.projsugg');const tl=hashTail(el.value);
+  if(!tl){if(box)box.remove();return}
+  const q=tl.q.trim().toLowerCase();const ps=Object.values(state.projects).filter(p=>!q||p.name.toLowerCase().includes(q)).sort((a,b)=>(b.name.toLowerCase().startsWith(q)-a.name.toLowerCase().startsWith(q))||a.name.localeCompare(b.name)).slice(0,5);
+  const exact=ps.some(p=>p.name.toLowerCase()===q);
+  if(!box){box=document.createElement('div');box.className='projsugg';box.setAttribute('role','listbox');el.closest('.frow').after(box)}
+  box.innerHTML=ps.map(p=>`<button type="button" class="chip" data-sug="${p.id}"><i class="pdot" style="background:${p.color}"></i>${esc(p.name)}</button>`).join('')+(q&&!exact?`<button type="button" class="chip newproj" data-sugnew="${esc(tl.q.trim())}">+ New project “${esc(niceName(tl.q.trim()))}”</button>`:'')+(!ps.length&&!q?'<span class="fnote" style="padding:4px 2px">Type a project name</span>':'')}
+document.addEventListener('pointerdown',e=>{const c=e.target.closest('.projsugg .chip');if(!c)return;e.preventDefault();const f=c.closest('form');const el=f.querySelector('input[name=title]');const tl=hashTail(el.value);
+  const existed=!c.dataset.sugnew;const p=existed?state.projects[c.dataset.sug]:findOrCreateProject(niceName(c.dataset.sugnew));if(!p)return;
+  if(tl)el.value=el.value.slice(0,tl.at).replace(/\s+$/,'')+(el.value.slice(0,tl.at).trim()?' ':'');pickProjectChip(f,p);const box=f.querySelector('.projsugg');if(box)box.remove();haptic(6);try{el.focus({preventScroll:true})}catch(x){}
+  toast(existed?`Project: ${p.name}`:`New project “${p.name}” added`)},true);
+document.addEventListener('input',e=>{const el=e.target;if(el.form&&(el.form.id==='whatForm'||el.form.id==='blockForm')&&el.name==='title')projSuggest(el)});
 /* select (adding if needed) a project's chip inside a form's project picker */
 function pickProjectChip(f,p){const hid=f.querySelector('input[name=projectId]');if(!hid)return;hid.value=p.id;const wrap=f.querySelector('[data-name="projectId"]')&&f.querySelector('[data-name="projectId"]').parentElement;
   if(wrap&&!wrap.querySelector(`[data-name="projectId"][data-value="${p.id}"]`)){const c=document.createElement('button');c.type='button';c.className='chip';c.dataset.act='chip:set';c.dataset.name='projectId';c.dataset.value=p.id;c.innerHTML=`<i class="pdot" style="background:${p.color}"></i>${esc(p.name)}`;wrap.insertBefore(c,wrap.querySelector('.newproj'))}
@@ -1710,7 +1734,7 @@ document.addEventListener('input',e=>{const el=e.target;if(!el.form||el.form.id!
 document.addEventListener('change',e=>{const el=e.target;if(el.form&&el.form.id==='blockForm'&&(el.name==='start'||el.name==='end'))syncBlockTimes(el.form,el.name)});
 function saveBlockForm(f){
   const d=readForm(f);const id=f.dataset.id;const b=id?state.blocks[id]:null;
-  const tg=takeProjectTag(d.title);if(tg.name)d.projectId=findOrCreateProject(tg.name).id;const title=tg.text;if(!title)return;
+  const tg=takeProjectTag(d.title,{create:true});if(tg.name)d.projectId=findOrCreateProject(tg.name).id;const title=tg.text;if(!title)return;
   let duration=parseInt(d.durationCustom)||parseInt(d.duration)||60;if(d.end){let e=fromHM(d.end)-fromHM(d.start);if(e<=0)e+=1440;if(e!==duration&&!d.durationCustom)duration=e}duration=Math.max(MIN_BLOCK,Math.min(1440,duration));
   const start=fromHM(d.start);const date=d.date||ui.date;const projectId=d.projectId||null;const icon=d.icon||null;const mode=d.repeat||'none';
   const daysFor={daily:[0,1,2,3,4,5,6],weekdays:[1,2,3,4,5],weekends:[0,6],custom:(d.days||'').split(',').filter(x=>x!=='').map(Number)}[mode]||[];
@@ -2941,7 +2965,7 @@ function handleLive(act,el){
     case'live:resume':resumeLive();return true;
     case'live:nameOpen':closeAllSheets();openSheet(whatForSheet(id));return true;
     case'live:skip':closeSheet();toast('Kept as “Untitled time”');return true;
-    case'live:name':{const d=readForm(el);const b=state.blocks[id];if(!b)return true;const tg=takeProjectTag(d.title);if(tg.name)d.projectId=findOrCreateProject(tg.name).id;const title=tg.text;
+    case'live:name':{const d=readForm(el);const b=state.blocks[id];if(!b)return true;const tg=takeProjectTag(d.title,{create:true});if(tg.name)d.projectId=findOrCreateProject(tg.name).id;const title=tg.text;
       put('blocks',id,{...b,title:title||'Untitled time',untitled:!title,projectId:d.projectId||null});closeSheet();renderApp();toast(b.live?(title?`Timing “${title}”`:'Still untitled'):(title?`Logged ${fmtDur(b.duration)} on “${title}”`:'Kept as “Untitled time”'));return true}
     case'live:pickTask':{const b=state.blocks[id];const t=state.tasks[el.dataset.task];if(!b||!t)return true;
       if(b.live){const prev=b.liveTask&&state.tasks[b.liveTask];if(prev&&prev.id!==t.id&&prev.timerStart)put('tasks',prev.id,{...prev,timerStart:null,actual:(prev.actual||0)+Math.max(1,Math.round((Date.now()-prev.timerStart)/60000))});
@@ -3194,7 +3218,7 @@ function pushCard(){const s=state.settings;const mine=pushMine();const subs=Obje
 function handlePush(act){switch(act){case'push:on':pushOn();return true;case'push:off':pushOff();return true;case'push:test':pushTest();return true;case'push:timer':state.settings.pushTimer=state.settings.pushTimer===false;saveSettings();refreshSheet();return true}return false}
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.12.2';
+const APP_VERSION='1.12.3';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
