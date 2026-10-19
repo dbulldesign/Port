@@ -1,4 +1,4 @@
 {
-  "version": "1.12.0",
-  "notes": "Reminders when Port is closed, sent by your repository on GitHub"
+  "version": "1.12.1",
+  "notes": "Dragging and stretching blocks snaps to half hours"
 }

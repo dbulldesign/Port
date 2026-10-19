@@ -1868,7 +1868,9 @@ const G={pending:null,timer:null,mode:null,drag:null,suppressClick:false};
 const SW={cur:null,open:null};
 function closeSwipe(){if(SW.open){const inner=SW.open.querySelector('.inner');if(inner)inner.style.transform='';SW.open=null}}
 document.addEventListener('touchstart',()=>{},{passive:true});
-function slotTime(col,clientY){const cr=col.getBoundingClientRect();const hs=state.settings.dayStart*60;let m=hs+Math.round((clientY-cr.top)/hourPx()*60/15)*15;return Math.max(0,Math.min(1425,m))}
+/* dragging on the calendar moves and sizes in half-hour steps */
+const SNAP=30;
+function slotTime(col,clientY){const cr=col.getBoundingClientRect();const hs=state.settings.dayStart*60;let m=Math.round((hs+(clientY-cr.top)/hourPx()*60)/SNAP)*SNAP;return Math.max(0,Math.min(1440-SNAP,m))}
 document.addEventListener('pointerdown',e=>{
   if(e.button)return;G.pending=null;G.mode=null;clearTimeout(G.timer);
   const grab=e.target.closest('.grab,.snav,.shead');
@@ -1973,7 +1975,7 @@ function endSwipe(vx=0){const s=SW.cur;if(!s)return;G.suppressClick=true;setTime
 function startResize(){const p=G.pending;if(!p||G.mode)return;G.mode='bresize';clearTimeout(G.timer);const b=state.blocks[p.id];if(!b){G.pending=null;G.mode=null;return}haptic(10);
   p.el.classList.add('stretching');p.dur=b.duration;p.badge=document.createElement('div');p.badge.className='timebadge end';p.el.closest('.daycol').appendChild(p.badge);moveResize({clientY:p.sy})}
 function moveResize(e){const p=G.pending;const b=state.blocks[p.id];if(!b)return;const col=p.el.closest('.daycol');const cr=col.getBoundingClientRect();const hs=state.settings.dayStart*60,he=state.settings.dayEnd*60,hh=hourPx();
-  let end=hs+Math.round((e.clientY-cr.top)/hh*60/5)*5;end=Math.max(b.start+MIN_BLOCK,Math.min(he,1440,end));const dur=end-b.start;
+  let end=Math.round((hs+(e.clientY-cr.top)/hh*60)/SNAP)*SNAP;end=Math.max(b.start+MIN_BLOCK,Math.min(he,1440,end));const dur=end-b.start;
   if(dur!==p.dur)haptic(3);p.dur=dur;p.el.style.height=Math.max(30,(end-Math.max(b.start,hs))/60*hh-4)+'px';const bd=p.el.querySelector('.bd');if(bd)bd.textContent=fmtDur(dur);
   p.badge.style.top=((end-hs)/60*hh)+'px';p.badge.textContent='ends '+fmtTimeShort(end)}
 function endResize(cancelled){const p=G.pending;if(!p)return;G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);if(p.badge)p.badge.remove();p.el.classList.remove('stretching');
@@ -2018,7 +2020,7 @@ function moveDrag(e){
     d.ghost.style.transform=`translate(${isWide()||visibleDates().length>1?dx:0}px,${dy}px) scale(1.02)`;
     const col=under&&under.closest('.daycol');
     if(col){const cr=col.getBoundingClientRect();const y=e.clientY-d.offY-cr.top;const hs=state.settings.dayStart*60;
-      let start=hs+Math.round(y/hourPx()*60/15)*15;start=Math.max(0,Math.min(1440-15,start));
+      let start=Math.round((hs+y/hourPx()*60)/SNAP)*SNAP;start=Math.max(0,Math.min(1440-SNAP,start));
       if(!d.badge){d.badge=document.createElement('div');d.badge.className='timebadge';d.line=document.createElement('div');d.line.className='dropline'}
       if(d.badge.parentNode!==col){col.appendChild(d.badge);col.appendChild(d.line)}
       const top=(start-hs)/60*hourPx();d.badge.style.top=top+'px';d.line.style.top=top+'px';d.badge.textContent=fmtTimeShort(start);
@@ -3180,7 +3182,7 @@ function pushCard(){const s=state.settings;const mine=pushMine();const subs=Obje
 function handlePush(act){switch(act){case'push:on':pushOn();return true;case'push:off':pushOff();return true;case'push:test':pushTest();return true;case'push:timer':state.settings.pushTimer=state.settings.pushTimer===false;saveSettings();refreshSheet();return true}return false}
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.12.0';
+const APP_VERSION='1.12.1';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
