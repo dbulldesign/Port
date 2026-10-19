@@ -59,6 +59,7 @@ Preferences (focus hours, buffer, breaks, lunch) are in Settings → Scheduling.
 
 - **Start it anywhere:** tap an empty spot on today's calendar (or the **▶** pill) and a blank timer starts right away; press and hold on the calendar to add a block at that time instead; the ▶ on any to do (in a project list or Day view) times that to do; a block's details has **Start timer** (a block later today starts now).
 - **While it runs** you see the clock in the calendar pill, in the to-do header, and as a growing block on the calendar. Anything scheduled after the timer started slides along ahead of it as the timer reaches it, and the blocks behind that move too, with your buffer kept. Port tells you each time it moves something.
+- **Block sizes:** no block is shorter than 30 minutes, so everything stays readable. A running timer is the one exception: it shows its real length and time while it runs. When it stops, the block rounds to the nearest half hour (never down by more than a couple of minutes), while the real minutes are logged on the to do and shown as "ran 23m".
 - **When you stop** (tap the pill): if the timer was started from a to do or a block, Port just logs the time. If it was a blank timer, it asks what the time was for: type a name and project, or pick the to do it belongs to. Tap **Later** to keep it as "Untitled time" and name it from the block whenever you like.
 
 ## Calendar views

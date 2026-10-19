@@ -1091,7 +1091,9 @@ const allTasks=()=>Object.values(state.tasks);
 const tasksArr=()=>allTasks().filter(t=>!t.archived);
 const tasksIn=bid=>tasksArr().filter(t=>t.blockId===bid).sort((a,b)=>(a.done-b.done)||(b.urgency-a.urgency)||(a.createdAt-b.createdAt));
 const blocksOn=date=>Object.values(state.blocks).filter(b=>b.date===date).sort((a,b)=>a.start-b.start||a.createdAt-b.createdAt);
-const blockEnd=b=>b.start+(b.live&&b.date===todayYmd()?Math.max(b.duration,nowMin()+1-b.start):b.duration);
+const MIN_BLOCK=30;
+const roundTo30=m=>{const up=Math.ceil(m/30)*30;const down=up-30;return m-down<=3&&down>=MIN_BLOCK?down:Math.max(MIN_BLOCK,up)};
+const blockEnd=b=>b.start+(b.live&&b.date===todayYmd()?Math.max(b.duration,nowMin()+1-b.start):Math.max(MIN_BLOCK,b.duration));
 const blockIcon=b=>b.icon||(b.projectId&&state.projects[b.projectId]&&state.projects[b.projectId].icon)||'tag';
 function inboxTasks(){return tasksArr().filter(t=>!t.blockId&&!t.done)}
 function sortTasks(arr){return arr.sort((a,b)=>(b.urgency-a.urgency)||((a.due||'9')>(b.due||'9')?1:(a.due||'9')<(b.due||'9')?-1:0)||(a.createdAt-b.createdAt))}
@@ -1461,7 +1463,7 @@ function blockSheet(id){return()=>{
   return`${snav('',{act:'sheet:close',label:'Close'},{act:'block:edit',id,label:'Edit'})}
   <div class="shead" style="${cvars(col)}"><h2><span class="bic">${ico(blockIcon(b),2.1)}</span>${esc(b.title)}</h2><div class="sub">${esc(fmtDay(b.date))}, ${fmtTime(b.start)} – ${fmtTime(blockEnd(b))} (${fmtDur(b.duration)})${b.routineId?', repeats':''}${p?`, ${esc(p.name)}`:''}</div>${pvaLine(tasks)}</div>
   <div class="sbody" style="${cvars(col)}">
-    ${(b.fromTimer||b.liveTask)&&!b.live?`<div class="card" style="margin-bottom:14px"><button class="frow" data-act="block:edit" data-id="${id}" style="width:100%"><label style="min-width:0;flex:1">Timer<small style="display:block;font-size:13px;color:var(--label2)">Started ${fmtTimeShort(b.start)}, ended ${fmtTimeShort(blockEnd(b))} · ${fmtDur(b.duration)}</small></label><span class="val" style="flex:none;color:var(--tint)">Edit end</span>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>`:''}
+    ${(b.fromTimer||b.liveTask)&&!b.live?`<div class="card" style="margin-bottom:14px"><button class="frow" data-act="block:edit" data-id="${id}" style="width:100%"><label style="min-width:0;flex:1">Timer<small style="display:block;font-size:13px;color:var(--label2)">Started ${fmtTimeShort(b.start)}, ended ${fmtTimeShort(blockEnd(b))} · ${fmtDur(b.duration)}${b.ran&&b.ran!==b.duration?` (ran ${fmtDur(b.ran)})`:''}</small></label><span class="val" style="flex:none;color:var(--tint)">Edit end</span>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>`:''}
     <div class="card" style="padding:8px 0 4px"><div class="todo-h" style="padding-left:20px"><span class="dotted"></span>Tasks</div><ul class="list">${tasks.map((t,i)=>taskRow(t,{i})).join('')||`<div class="empty" style="padding-top:6px">Nothing scheduled yet. Add a to do below${isWide()?', or drag one in':', or hold one in the list and carry it here'}.</div>`}</ul>
       ${ui.adding&&ui.adding.kind==='block'&&ui.adding.id===id?`<div class="newrow" style="padding-left:20px"><span class="plus">${I.plus}</span><input class="newinput" placeholder="New To Do" aria-label="New to do" autocomplete="off" enterkeyhint="done" data-act="new:text" autofocus></div>`:`<button class="newrow ${tasks.length?'':'dim'}" style="padding-left:20px" data-act="todo:newInBlock" data-id="${id}"><span class="plus">${I.plus}</span>New To Do</button>`}</div>
     <div class="btnrow">${b.live?`<button class="btn primary" data-act="live:stop" style="--c:#FF453A">Stop timer · <span class="trun tabular" data-start="${b.liveStart}">${fmtClock(liveElapsedSec(b))}</span></button>`:b.date===todayYmd()&&blockEnd(b)>nowMin()?`<button class="btn primary" data-act="live:startBlock" data-id="${id}">${I.play.replace('<svg','<svg style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:4px"')}Start timer</button>`:''}<button class="btn ${b.live||!(b.date===todayYmd()&&blockEnd(b)>nowMin())?'primary':''}" data-act="block:focus" data-id="${id}">Focus</button><button class="btn ${b.anchored?'anchored':''}" data-act="block:anchor" data-id="${id}" aria-pressed="${!!b.anchored}">${ico('anchor',2.2).replace('<svg','<svg style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:5px"')}${b.anchored?'Anchored':'Anchor in'}</button>${left?`<button class="btn" data-act="focus:moveLeft" data-id="${id}">Move what’s left</button>`:''}</div>
@@ -1475,7 +1477,7 @@ function blockEditor(init,withCb){return()=>{
   const r=b&&b.routineId?state.routines[b.routineId]:null;
   const cp=currentProject();
   const v={title:b?b.title:(init.title||''),date:b?b.date:init.date||ui.date,start:b?b.start:(init.start??Math.min(1425,Math.ceil(nowMin()/15)*15)),duration:b?b.duration:(init.duration||60),projectId:b?b.projectId:(init.projectId!==undefined?init.projectId:(cp?cp.id:null)),icon:b?(b.icon||''):''};
-  const repeat=r?(r.mode||'custom'):'none';const days=r?r.days:[1,2,3,4,5];const durs=[15,30,45,60,90,120,180];
+  const repeat=r?(r.mode||'custom'):'none';const days=r?r.days:[1,2,3,4,5];const durs=[30,45,60,90,120,180,240];
   return`${snav(b?'Edit Block':'New Block',{act:'sheet:close',label:'Cancel'},{act:'noop',label:b?'Save':'Add',form:'blockForm'})}
   <div class="sbody"><form id="blockForm" data-act="block:save" data-id="${b?b.id:''}" data-cb="${withCb?'1':''}">
     <div class="card"><div class="frow big"><input name="title" value="${esc(v.title)}" placeholder="What is this time for?" required ${b?'':'autofocus'} autocomplete="off" aria-label="Block title"></div></div>
@@ -1483,7 +1485,7 @@ function blockEditor(init,withCb){return()=>{
       <div class="frow"><label>Day</label><input type="date" name="date" value="${v.date}" required></div>
       <div class="frow"><label>Starts</label><input type="time" name="start" value="${toHM(v.start)}" step="60" required></div>
       <div class="frow"><label>Ends</label><input type="time" name="end" value="${toHM((v.start+v.duration)%1440)}" step="60"></div>
-      <div class="frow" style="display:block"><label style="display:block;margin-bottom:8px">Duration</label><div class="chips" style="padding:0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${durs.map(d=>`<button type="button" class="chip ${v.duration===d?'on':''}" data-act="chip:set" data-name="duration" data-value="${d}">${fmtDur(d)}</button>`).join('')}<input type="number" name="durationCustom" min="1" max="1440" step="1" placeholder="min" value="${durs.includes(v.duration)?'':v.duration}" aria-label="Custom minutes" style="width:70px;flex:none;background:var(--fill);border:0;border-radius:999px;padding:7px 12px;font-size:15px"></div><input type="hidden" name="duration" value="${v.duration}"></div>
+      <div class="frow" style="display:block"><label style="display:block;margin-bottom:8px">Duration</label><div class="chips" style="padding:0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${durs.map(d=>`<button type="button" class="chip ${v.duration===d?'on':''}" data-act="chip:set" data-name="duration" data-value="${d}">${fmtDur(d)}</button>`).join('')}<input type="number" name="durationCustom" min="30" max="1440" step="5" placeholder="min" value="${durs.includes(v.duration)?'':v.duration}" aria-label="Custom minutes" style="width:70px;flex:none;background:var(--fill);border:0;border-radius:999px;padding:7px 12px;font-size:15px"></div><input type="hidden" name="duration" value="${v.duration}"></div>
       <div class="frow"><label>Repeat</label><select name="repeat" data-act="repeat:change">${[['none','Never'],['daily','Every day'],['weekdays','Weekdays'],['weekends','Weekends'],['custom','Choose days']].map(([k,l])=>`<option value="${k}" ${repeat===k?'selected':''}>${l}</option>`).join('')}</select></div>
       <div class="frow" id="dayToggles" style="display:${repeat==='custom'?'flex':'none'}"><div class="chips" style="padding:0;width:100%;justify-content:space-between">${WD.map((d,i)=>`<button type="button" class="chip ${days.includes(i)?'on':''}" data-act="chip:toggle" data-name="days" data-value="${i}" style="padding:7px 0;width:38px;justify-content:center">${d[0]}</button>`).join('')}</div><input type="hidden" name="days" value="${days.join(',')}"></div>
       ${r?`<div class="frow"><label>Apply to</label><div class="seg"><button type="button" class="on" data-act="chip:set" data-name="scope" data-value="one">This block</button><button type="button" data-act="chip:set" data-name="scope" data-value="future">All future</button></div><input type="hidden" name="scope" value="one"></div>`:''}
@@ -1602,7 +1604,7 @@ function createBlock(o){const id=uid('b');(ui.freshBlocks=ui.freshBlocks||[]).pu
 function syncBlockTimes(f,changed){
   const st=f.querySelector('input[name=start]'),en=f.querySelector('input[name=end]'),du=f.querySelector('input[name=duration]'),cu=f.querySelector('input[name=durationCustom]');if(!st||!en||!du)return;
   const start=fromHM(st.value||'0:0');let dur=parseInt(cu&&cu.value)||parseInt(du.value)||60;
-  if(changed==='end'){if(!en.value)return;dur=fromHM(en.value)-start;if(dur<=0)dur+=1440;dur=Math.max(1,Math.min(1440,dur));du.value=dur;
+  if(changed==='end'){if(!en.value)return;dur=fromHM(en.value)-start;if(dur<=0)dur+=1440;dur=Math.max(MIN_BLOCK,Math.min(1440,dur));du.value=dur;
     const chips=$$('[data-name="duration"]',f);const hit=chips.find(c=>+c.dataset.value===dur);chips.forEach(c=>c.classList.toggle('on',c===hit));if(cu)cu.value=hit?'':dur}
   else en.value=toHM((start+dur)%1440);
 }
@@ -1611,7 +1613,7 @@ document.addEventListener('change',e=>{const el=e.target;if(el.form&&el.form.id=
 function saveBlockForm(f){
   const d=readForm(f);const id=f.dataset.id;const b=id?state.blocks[id]:null;
   const title=(d.title||'').trim();if(!title)return;
-  let duration=parseInt(d.durationCustom)||parseInt(d.duration)||60;if(d.end){let e=fromHM(d.end)-fromHM(d.start);if(e<=0)e+=1440;if(e!==duration&&!d.durationCustom)duration=e}duration=Math.max(1,Math.min(1440,duration));
+  let duration=parseInt(d.durationCustom)||parseInt(d.duration)||60;if(d.end){let e=fromHM(d.end)-fromHM(d.start);if(e<=0)e+=1440;if(e!==duration&&!d.durationCustom)duration=e}duration=Math.max(MIN_BLOCK,Math.min(1440,duration));
   const start=fromHM(d.start);const date=d.date||ui.date;const projectId=d.projectId||null;const icon=d.icon||null;const mode=d.repeat||'none';
   const daysFor={daily:[0,1,2,3,4,5,6],weekdays:[1,2,3,4,5],weekends:[0,6],custom:(d.days||'').split(',').filter(x=>x!=='').map(Number)}[mode]||[];
   let newId=id;
@@ -1802,7 +1804,7 @@ function gestureMove(e){
   if(G.mode==='calresize'){const pts=calPoints();let h=p.h0+dy;if(h<pts.min)h=pts.min-(pts.min-h)*.22;else if(h>pts.full)h=pts.full+(h-pts.full)*.22;p.el.style.height=h+'px';return}
   if(G.mode==='dayswipe'){stopAnim('dayAnim');const g=$('.tl-grid,.mgrid');if(g){g.style.transition='none';g.style.willChange='transform';g.style.transform=`translate3d(${dx}px,0,0)`;g.style.opacity=String(Math.max(.35,1-Math.abs(dx)/700))}return}
   if(G.mode==='slotdrag'){moveProvisional(slotTime(p.el,e.clientY-p.offset));return}
-  if(G.mode==='draw'){const a=p.start,b=slotTime(p.el,e.clientY);const s=Math.min(a,b),d=Math.max(15,Math.abs(b-a));moveProvisional(s,d);return}
+  if(G.mode==='draw'){const a=p.start,b=slotTime(p.el,e.clientY);const s=Math.min(a,b),d=Math.max(MIN_BLOCK,Math.abs(b-a));moveProvisional(s,d);return}
   if(G.mode==='projedit')return;
   const ad=Math.abs(dx),ady=Math.abs(dy);
   if(p.kind==='sheet'){if(dy>8&&ady>ad){G.mode='sheet';stopAnim('sheetAnim');p.sy=e.clientY}return}
@@ -1810,7 +1812,7 @@ function gestureMove(e){
   if(p.kind==='proj'){if(ad>6||ady>6){clearTimeout(G.timer);G.pending=null}return}
   if(ad<7&&ady<7)return;
   if(p.kind==='mswipe'){if(ad>ady)G.mode='dayswipe';else G.pending=null;return}
-  if(p.kind==='slot'){clearTimeout(G.timer);if(p.mouse&&ady>ad){G.mode='draw';createProvisional(p.el,Math.min(p.start,slotTime(p.el,e.clientY)),Math.max(15,Math.abs(slotTime(p.el,e.clientY)-p.start)));return}if(ad>ady&&!isWide()){G.mode='dayswipe';return}G.pending=null;return}
+  if(p.kind==='slot'){clearTimeout(G.timer);if(p.mouse&&ady>ad){G.mode='draw';createProvisional(p.el,Math.min(p.start,slotTime(p.el,e.clientY)),Math.max(MIN_BLOCK,Math.abs(slotTime(p.el,e.clientY)-p.start)));return}if(ad>ady&&!isWide()){G.mode='dayswipe';return}G.pending=null;return}
   if(p.mouse){if(p.kind==='block'&&p.edge)startResize();else if(p.draggable)liftDrag();else G.pending=null;return}
   if(ad>ady&&p.kind==='task'){clearTimeout(G.timer);G.mode='swipe';startSwipe(p.el);moveSwipe(dx);return}
   if(ad>ady&&p.kind==='block'&&!isWide()){clearTimeout(G.timer);G.mode='dayswipe';return}
@@ -1877,7 +1879,7 @@ function endSwipe(vx=0){const s=SW.cur;if(!s)return;G.suppressClick=true;setTime
 function startResize(){const p=G.pending;if(!p||G.mode)return;G.mode='bresize';clearTimeout(G.timer);const b=state.blocks[p.id];if(!b){G.pending=null;G.mode=null;return}haptic(10);
   p.el.classList.add('stretching');p.dur=b.duration;p.badge=document.createElement('div');p.badge.className='timebadge end';p.el.closest('.daycol').appendChild(p.badge);moveResize({clientY:p.sy})}
 function moveResize(e){const p=G.pending;const b=state.blocks[p.id];if(!b)return;const col=p.el.closest('.daycol');const cr=col.getBoundingClientRect();const hs=state.settings.dayStart*60,he=state.settings.dayEnd*60,hh=hourPx();
-  let end=hs+Math.round((e.clientY-cr.top)/hh*60/5)*5;end=Math.max(b.start+15,Math.min(he,1440,end));const dur=end-b.start;
+  let end=hs+Math.round((e.clientY-cr.top)/hh*60/5)*5;end=Math.max(b.start+MIN_BLOCK,Math.min(he,1440,end));const dur=end-b.start;
   if(dur!==p.dur)haptic(3);p.dur=dur;p.el.style.height=Math.max(30,(end-Math.max(b.start,hs))/60*hh-4)+'px';const bd=p.el.querySelector('.bd');if(bd)bd.textContent=fmtDur(dur);
   p.badge.style.top=((end-hs)/60*hh)+'px';p.badge.textContent='ends '+fmtTimeShort(end)}
 function endResize(cancelled){const p=G.pending;if(!p)return;G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);if(p.badge)p.badge.remove();p.el.classList.remove('stretching');
@@ -1976,10 +1978,10 @@ function smartPlan(date,o={}){
   tasks.sort((a,b)=>prio(b,date)-prio(a,date));
   const items=[];
   const quick=tasks.filter(t=>(t.est||30)<=15&&!t.dueTime);
-  for(const t of tasks.filter(t=>!quick.includes(t))){const dur=Math.max(15,Math.round((t.est||30)/15)*15);const deep=isDeep(t);const before=t.dueTime&&t.due===date?fromHM(t.dueTime):null;
+  for(const t of tasks.filter(t=>!quick.includes(t))){const dur=Math.max(MIN_BLOCK,Math.round((t.est||30)/15)*15);const deep=isDeep(t);const before=t.dueTime&&t.due===date?fromHM(t.dueTime):null;
     const g=!deep&&before==null&&items.find(u=>!u.deep&&u.before==null&&!u.quick&&u.projectId===(t.projectId||null)&&u.dur+dur<=120);
     if(g){g.tasks.push(t);g.dur+=dur}else items.push({tasks:[t],dur,deep,before,projectId:t.projectId||null,score:prio(t,date)})}
-  for(let i=0;i<quick.length;){let dur=0;const grp=[];while(i<quick.length&&dur+(quick[i].est||15)<=60){dur+=quick[i].est||15;grp.push(quick[i]);i++}items.push({tasks:grp,dur:Math.max(15,Math.ceil(dur/15)*15),quick:true,projectId:null,before:null,score:Math.max(...grp.map(t=>prio(t,date)))-5})}
+  for(let i=0;i<quick.length;){let dur=0;const grp=[];while(i<quick.length&&dur+(quick[i].est||15)<=60){dur+=quick[i].est||15;grp.push(quick[i]);i++}items.push({tasks:grp,dur:Math.max(MIN_BLOCK,Math.ceil(dur/15)*15),quick:true,projectId:null,before:null,score:Math.max(...grp.map(t=>prio(t,date)))-5})}
   const order=[...items.filter(i=>i.before!=null).sort((a,b)=>a.before-b.before),...items.filter(i=>i.before==null&&i.deep).sort((a,b)=>b.score-a.score),...items.filter(i=>i.before==null&&!i.deep).sort((a,b)=>b.score-a.score)];
   const anyDeep=items.some(i=>i.deep);const placed=[],unplaced=[];
   const place=(it,s)=>{const e=s+it.dur;busy.push([s,e]);blocksOnly.push([s,e]);placed.push({...it,start:s});const rs=runStart(blocksOnly,s,p.buffer);if(p.breakAfter&&e-rs>=p.breakAfter)busy.push([e,e+p.breakLen])};
@@ -2016,7 +2018,7 @@ function findSlots(dur,deep,n){const p=P();const out=[];const t=todayYmd();
     for(const [a,b] of gs){if(per>=2||out.length>=n)break;if(a+dur<=b&&!out.some(x=>x.date===date&&Math.abs(x.start-a)<dur)){out.push({date,start:a});per++}}}
   return out.slice(0,n)}
 function findSheet(id){return()=>{const t=state.tasks[id];if(!t)return`${snav('Find a time',{act:'sheet:close',label:'Close'})}<div class="sbody"><div class="empty">This to do was removed.</div></div>`;
-  const dur=Math.max(15,Math.round((t.est||30)/15)*15);const slots=findSlots(dur,isDeep(t),7);let last='';
+  const dur=Math.max(MIN_BLOCK,Math.round((t.est||30)/15)*15);const slots=findSlots(dur,isDeep(t),7);let last='';
   const rows=slots.map(s=>{const head=s.date!==last?`${last?'</div>':''}<div class="pick-day">${esc(fmtDay(s.date))}</div><div class="card">`:'';last=s.date;
     const late=t.due&&s.date>t.due;return head+`<button class="pick" data-act="sched:slot" data-id="${id}" data-date="${s.date}" data-start="${s.start}" style="--c:${colorOf(t.projectId)}"><span class="bic">${ico('calendar',2)}</span><div class="pt"><div>${fmtTimeShort(s.start)} – ${fmtTimeShort(s.start+dur)}</div><small>${s.focus?'In your focus hours':'Next free gap'}${late?', after the due date':''}</small></div></button>`}).join('')+(slots.length?'</div>':'');
   return`${snav('Find a time',{act:'sheet:close',label:'Cancel'})}<div class="fnote" style="padding:0 16px 6px">${esc(t.title)}, ${fmtDur(dur)}${t.est?'':' (no estimate, using 30m)'}</div><div class="sbody">${rows||'<div class="empty">No free gap that long in the next two weeks.</div>'}</div>`}}
@@ -2034,7 +2036,7 @@ function conflictsOn(date){const bl=blocksOn(date);const ids=new Set();for(let i
 function fixConflicts(date){const p=P();const t=todayYmd();const bl=blocksOn(date).sort((a,b)=>a.start-b.start||(a.createdAt||0)-(b.createdAt||0));let end=-1,moved=0;const snap=snapshotState();
   for(const b of bl){const can=(date>t||(date===t&&b.start>=nowMin()))&&movable(b);if(end>b.start&&can){const ns=pastAnchors(date,Math.min(1425,Math.ceil((end+p.buffer)/5)*5),b.duration,b.id);put('blocks',b.id,{...state.blocks[b.id],start:ns});moved++;end=ns+b.duration}else end=Math.max(end,blockEnd(b))}
   renderApp();if(moved)toast(`Moved ${moved} block${moved===1?'':'s'} so nothing overlaps`,{label:'Undo',fn:()=>restoreSnapshot(snap)});else toast('Overlaps are in blocks that already started or are anchored');return moved}
-function quickBlock(text){const p=parseCapture(text);if(!p.title)return{err:'Type what the block is for'};const t=todayYmd();const date=p.due||(ui.date>=t?ui.date:t);const dur=Math.max(15,p.est||60);
+function quickBlock(text){const p=parseCapture(text);if(!p.title)return{err:'Type what the block is for'};const t=todayYmd();const date=p.due||(ui.date>=t?ui.date:t);const dur=Math.max(MIN_BLOCK,p.est||60);
   let start=p.dueTime?fromHM(p.dueTime):null;if(start==null){start=fit(gaps(date,busyFor(date),dayFrom(date)),dur);if(start==null)return{err:`No free ${fmtDur(dur)} left on ${fmtDay(date)}`}}
   const pid=p.projectName?findOrCreateProject(p.projectName).id:p.projectMatch||(currentProject()?currentProject().id:null);const id=createBlock({title:p.title,date,start,duration:dur,projectId:pid});return{id,date,start}}
 function freeSummary(date){const gs=gaps(date,busyFor(date),dayFrom(date));const total=gs.reduce((s,g)=>s+g[1]-g[0],0);const lg=gs.reduce((m,g)=>g[1]-g[0]>(m?m[1]-m[0]:0)?g:m,null);
@@ -2090,7 +2092,7 @@ function handleSched(act,el,e){
     case'sched:fix':closeAllSheets();fixConflicts(el.dataset.date||todayYmd());break;
     case'sched:quick':{const inp=el.querySelector('input');const r=quickBlock(inp.value);if(r.err){toast(r.err);break}inp.value='';closeAllSheets();if(ui.date!==r.date){ui.date=r.date;ui.scrolledToNow=false}renderApp();haptic(10);toast(`Added at ${fmtTimeShort(r.start)}${r.date!==todayYmd()?', '+fmtDay(r.date):''}`);break}
     case'sched:find':{const f=el.closest('form');if(f)saveTaskForm(f);openSheet(findSheet(el.dataset.id));break}
-    case'sched:slot':{const t=state.tasks[el.dataset.id];if(!t)break;const snap=snapshotState();const dur=Math.max(15,Math.round((t.est||30)/15)*15);const date=el.dataset.date,start=+el.dataset.start;
+    case'sched:slot':{const t=state.tasks[el.dataset.id];if(!t)break;const snap=snapshotState();const dur=Math.max(MIN_BLOCK,Math.round((t.est||30)/15)*15);const date=el.dataset.date,start=+el.dataset.start;
       const bid=createBlock({title:t.title,date,start,duration:dur,projectId:t.projectId||null});put('tasks',t.id,{...state.tasks[t.id],blockId:bid,due:date});closeAllSheets();if(ui.date!==date){ui.date=date;ui.scrolledToNow=false}renderApp();haptic(10);
       toast(`Scheduled ${fmtDay(date)} ${fmtTimeShort(start)}`,{label:'Undo',fn:()=>restoreSnapshot(snap)});break}
     case'sched:rollover':state.settings.rollover=!P().rollover;saveSettings();refreshSheet();break;
@@ -2733,11 +2735,12 @@ function stopLive(o={}){
   const task=b.liveTask&&state.tasks[b.liveTask];
   if(task&&task.timerStart)put('tasks',task.id,{...task,timerStart:null,actual:(task.actual||0)+Math.max(1,Math.round((Date.now()-task.timerStart)/60000))});
   /* a timer-made block is exactly as long as it ran; a scheduled block only grows if the timer ran past its end */
-  let duration=b.fromTimer?mins:(today?Math.max(b.duration,nowMin()+1-b.start):b.duration);duration=Math.max(1,Math.min(1440-b.start,duration));
-  const nb={...b,duration};delete nb.live;delete nb.liveStart;put('blocks',b.id,nb);
+  const ran=today?Math.max(mins,nowMin()+1-b.start):mins;
+  let duration=b.fromTimer?roundTo30(ran):Math.max(b.duration,roundTo30(ran));duration=Math.max(MIN_BLOCK,Math.min(1440-b.start,duration));
+  const nb={...b,duration,ran:b.fromTimer?mins:(b.ran||mins)};delete nb.live;delete nb.liveStart;put('blocks',b.id,nb);
   renderApp();refreshSheet();
   if(o.silent)return nb;
-  if(nb.untitled){closeAllSheets();openSheet(whatForSheet(nb.id))}else toast('Logged '+fmtDur(mins)+(task?' on “'+task.title+'”':''));
+  if(nb.untitled){closeAllSheets();openSheet(whatForSheet(nb.id))}else toast('Logged '+fmtDur(mins)+(task?' on “'+task.title+'”':'')+(nb.duration!==mins&&b.fromTimer?', block rounded to '+fmtDur(nb.duration):''));
   return nb}
 const liveSaid=new Set();
 function liveTick(force){
@@ -2760,7 +2763,7 @@ function tickLive(){
 function whatForSheet(id){return()=>{const b=state.blocks[id];if(!b)return`${snav('Time logged',{act:'sheet:close',label:'Close'})}<div class="sbody"><div class="empty">This block was removed.</div></div>`;
   const cands=sortTasks(tasksArr().filter(t=>!t.done)).slice(0,12);
   return`${snav('What was that for?',{act:'live:skip',id,label:'Later'},{act:'noop',label:'Save',form:'whatForm'})}<div class="sbody"><form id="whatForm" data-act="live:name" data-id="${id}">
-    <div class="fnote" style="padding:0 0 10px">${b.live?`Running since ${fmtTimeShort(b.start)}.`:`${fmtDur(b.duration)} from ${fmtTimeShort(b.start)}.`} Give it a name, or pick the to do it belongs to.</div>
+    <div class="fnote" style="padding:0 0 10px">${b.live?`Running since ${fmtTimeShort(b.start)}.`:`${fmtDur(b.ran||b.duration)} from ${fmtTimeShort(b.start)}${b.ran&&b.ran!==b.duration?`, kept as a ${fmtDur(b.duration)} block`:''}.`} Give it a name, or pick the to do it belongs to.</div>
     <div class="card"><div class="frow big"><input name="title" placeholder="What did you work on?" autofocus autocomplete="off" aria-label="Name"></div></div>
     <div class="fnote" style="padding-top:14px">Project</div><div class="card" style="margin-top:6px">${projectChips(b.projectId)}</div>
     ${cands.length?`<div class="fnote" style="padding-top:14px">Or log it on a to do</div><div class="card" style="margin-top:6px">${cands.map(t=>`<button type="button" class="pick" data-act="live:pickTask" data-id="${id}" data-task="${t.id}" style="${cvars(colorOf(t.projectId))}"><span class="bic">${ico(t.projectId&&state.projects[t.projectId]?(state.projects[t.projectId].icon||'tag'):'inbox',2)}</span><div class="pt"><div>${esc(t.title)}</div><small>${t.projectId&&state.projects[t.projectId]?esc(state.projects[t.projectId].name):'Inbox'}${t.est?', ~'+fmtDur(t.est):''}${t.actual?', '+fmtDur(t.actual)+' logged':''}</small></div></button>`).join('')}</div>`:''}
@@ -2799,7 +2802,7 @@ document.addEventListener('click',e=>{const c=e.target.closest('#whatForm [data-
     const est=tasks.reduce((s,t)=>s+(t.est||0),0),act=tasks.reduce((s,t)=>s+(t.actual||0),0);
     return`<div class="hc-t">${b.anchored?ico('anchor',2.4).replace('<svg','<svg class="hc-i"'):''}${esc(b.live&&b.untitled?'Timer running':b.title)}</div>
       <div class="hc-p" style="--c:${pr?pr.color:NOCOLOR}"><i class="pdot" style="background:var(--c)"></i>${pr?esc(pr.name):'No project'}</div>
-      <div class="hc-s">${esc(fmtDay(b.date))} · ${fmtTime(b.start)} – ${fmtTime(blockEnd(b))} · ${fmtDur(blockEnd(b)-b.start)}${b.live?' · running':''}${b.routineId?' · repeats':''}</div>
+      <div class="hc-s">${esc(fmtDay(b.date))} · ${fmtTime(b.start)} – ${fmtTime(blockEnd(b))} · ${fmtDur(blockEnd(b)-b.start)}${b.live?' · running':''}${b.ran&&b.ran!==b.duration?' · ran '+fmtDur(b.ran):''}${b.routineId?' · repeats':''}</div>
       ${lt&&lt.title!==b.title?`<div class="hc-s">Timing: ${esc(lt.title)}</div>`:''}
       ${b.notes?`<div class="hc-n">${esc(b.notes)}</div>`:''}
       ${tasks.length?`<ul class="hc-l">${tasks.map(t=>`<li class="${t.done?'done':''}"><i></i><span>${esc(t.title)}</span>${t.est||t.actual?`<em>${t.actual?fmtDur(t.actual)+(t.est?' / '+fmtDur(t.est):''):fmtDur(t.est)}</em>`:''}${subsOf(t).length?`<em>${subsOf(t).filter(x=>x.done).length}/${subsOf(t).length}</em>`:''}${t.notes?`<small>${esc(t.notes)}</small>`:''}</li>`).join('')}</ul>${est||act?`<div class="hc-n">${act?fmtDur(act)+' logged':''}${act&&est?' · ':''}${est?fmtDur(est)+' estimated':''}</div>`:''}`:''}`};
@@ -2828,7 +2831,7 @@ document.addEventListener('click',e=>{const c=e.target.closest('#whatForm [data-
 })();
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.7.0';
+const APP_VERSION='1.7.1';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
