@@ -1180,7 +1180,7 @@ function monthDay(mo,d,today){
 function createTaskFromText(text,extra={}){
   const p=parseCapture(text);
   let projectId=extra.projectId||null;
-  if(p.projectName)projectId=findOrCreateProject(p.projectName).id;else if(p.projectMatch)projectId=p.projectMatch;
+  if(p.projectName)projectId=findOrCreateProject(p.projectName).id;else if(p.projectMatch&&!extra.projectId)projectId=p.projectMatch;
   const id=uid('t');
   const t={id,title:p.title||'Untitled task',projectId,urgency:extra.urgency??p.urgency,due:extra.due!==undefined?extra.due:p.due,dueTime:extra.dueTime!==undefined?extra.dueTime:p.dueTime,blockId:extra.blockId||null,done:false,createdAt:Date.now(),notes:'',est:p.est||0,tags:p.tags||[]};
   if(!t.est&&typeof guessEst==='function'){const g=guessEst(t.title,t.projectId);if(g){t.est=g;t.estAuto=true}}
@@ -1648,7 +1648,11 @@ function addNewToDo(input){
   if(a.kind==='block'){extra.blockId=a.id;const b=state.blocks[a.id];if(b)extra.projectId=b.projectId}else{const p=currentProject();extra.projectId=p?p.id:null;if(a.kind==='day'&&a.date)extra.due=a.date}
   if(ui.newUrg)extra.urgency=ui.newUrg;if(ui.newDue)extra.due=ui.newDue;
   const t=createTaskFromText(text,extra);haptic(8);input.value='';ui.newUrg=0;ui.newDue=null;
-  renderApp();refreshSheet();return t;
+  renderApp();refreshSheet();
+  const here=a.kind==='block'?undefined:(currentProject()?currentProject().id:null);
+  if(here!==undefined&&ui.mode==='list'&&(t.projectId||null)!==here){const pr=t.projectId&&state.projects[t.projectId];
+    toast(`Added “${t.title}” to ${pr?pr.name:'Inbox'}`,{label:'Keep here',fn:()=>{const cur=state.tasks[t.id];if(cur){put('tasks',t.id,{...cur,projectId:here});renderApp()}}})}
+  return t;
 }
 
 /* provisional block (tap / hold on the calendar) */
@@ -2833,7 +2837,7 @@ document.addEventListener('click',e=>{const c=e.target.closest('#whatForm [data-
 })();
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.7.2';
+const APP_VERSION='1.7.3';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);

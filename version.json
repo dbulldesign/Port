@@ -1,4 +1,4 @@
 {
-  "version": "1.7.2",
-  "notes": "A stopped timer rounds its time to the half hour everywhere"
+  "version": "1.7.3",
+  "notes": "Smart tagging only re-files a to do from the Inbox, and says where it went"
 }
