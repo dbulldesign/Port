@@ -1236,6 +1236,16 @@ function parseCapture(raw){
   return out;
 }
 const projectByName=n=>{const l=String(n||'').trim().toLowerCase();return l?Object.values(state.projects).find(p=>p.name.toLowerCase()===l)||null:null};
+const PROJ_TAG=/(^|\s)[#@](?:"([^"]+)"|“([^”]+)”|'([^']+)'|‘([^’]+)’)/;
+function takeProjectTag(text){let t=String(text||'');let name=null;
+  const m=t.match(PROJ_TAG);if(m){name=(m[2]||m[3]||m[4]||m[5]).trim();t=t.replace(m[0],m[1])}
+  else{const w=t.match(/(^|\s)#([A-Za-z][\w-]*)(?=\s|$)/);if(w&&projectByName(w[2])){name=projectByName(w[2]).name;t=t.replace(w[0],w[1])}}
+  return{text:t.replace(/\s+/g,' ').trim(),name}}
+/* select (adding if needed) a project's chip inside a form's project picker */
+function pickProjectChip(f,p){const hid=f.querySelector('input[name=projectId]');if(!hid)return;hid.value=p.id;const wrap=f.querySelector('[data-name="projectId"]')&&f.querySelector('[data-name="projectId"]').parentElement;
+  if(wrap&&!wrap.querySelector(`[data-name="projectId"][data-value="${p.id}"]`)){const c=document.createElement('button');c.type='button';c.className='chip';c.dataset.act='chip:set';c.dataset.name='projectId';c.dataset.value=p.id;c.innerHTML=`<i class="pdot" style="background:${p.color}"></i>${esc(p.name)}`;wrap.insertBefore(c,wrap.querySelector('.newproj'))}
+  $$('[data-name="projectId"]',f).forEach(c=>c.classList.toggle('on',c.dataset.value===p.id));const on=f.querySelector(`[data-name="projectId"][data-value="${p.id}"]`);if(on)on.scrollIntoView({inline:'nearest',block:'nearest'});
+  const g=f.querySelector('.icongrid');if(g)g.style.setProperty('--c',p.color);f.dataset.manualProj='1'}
 function detectProject(text){const t=' '+String(text||'').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ')+' ';let best=null;
   for(const p of Object.values(state.projects)){const n=p.name.toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();if(n.length<3)continue;if(t.includes(' '+n+' ')&&(!best||n.length>best.n.length))best={p,n}}
   return best?best.p:null}
@@ -1700,7 +1710,7 @@ document.addEventListener('input',e=>{const el=e.target;if(!el.form||el.form.id!
 document.addEventListener('change',e=>{const el=e.target;if(el.form&&el.form.id==='blockForm'&&(el.name==='start'||el.name==='end'))syncBlockTimes(el.form,el.name)});
 function saveBlockForm(f){
   const d=readForm(f);const id=f.dataset.id;const b=id?state.blocks[id]:null;
-  const title=(d.title||'').trim();if(!title)return;
+  const tg=takeProjectTag(d.title);if(tg.name)d.projectId=findOrCreateProject(tg.name).id;const title=tg.text;if(!title)return;
   let duration=parseInt(d.durationCustom)||parseInt(d.duration)||60;if(d.end){let e=fromHM(d.end)-fromHM(d.start);if(e<=0)e+=1440;if(e!==duration&&!d.durationCustom)duration=e}duration=Math.max(MIN_BLOCK,Math.min(1440,duration));
   const start=fromHM(d.start);const date=d.date||ui.date;const projectId=d.projectId||null;const icon=d.icon||null;const mode=d.repeat||'none';
   const daysFor={daily:[0,1,2,3,4,5,6],weekdays:[1,2,3,4,5],weekends:[0,6],custom:(d.days||'').split(',').filter(x=>x!=='').map(Number)}[mode]||[];
@@ -2931,7 +2941,7 @@ function handleLive(act,el){
     case'live:resume':resumeLive();return true;
     case'live:nameOpen':closeAllSheets();openSheet(whatForSheet(id));return true;
     case'live:skip':closeSheet();toast('Kept as “Untitled time”');return true;
-    case'live:name':{const d=readForm(el);const b=state.blocks[id];if(!b)return true;const title=(d.title||'').trim();
+    case'live:name':{const d=readForm(el);const b=state.blocks[id];if(!b)return true;const tg=takeProjectTag(d.title);if(tg.name)d.projectId=findOrCreateProject(tg.name).id;const title=tg.text;
       put('blocks',id,{...b,title:title||'Untitled time',untitled:!title,projectId:d.projectId||null});closeSheet();renderApp();toast(b.live?(title?`Timing “${title}”`:'Still untitled'):(title?`Logged ${fmtDur(b.duration)} on “${title}”`:'Kept as “Untitled time”'));return true}
     case'live:pickTask':{const b=state.blocks[id];const t=state.tasks[el.dataset.task];if(!b||!t)return true;
       if(b.live){const prev=b.liveTask&&state.tasks[b.liveTask];if(prev&&prev.id!==t.id&&prev.timerStart)put('tasks',prev.id,{...prev,timerStart:null,actual:(prev.actual||0)+Math.max(1,Math.round((Date.now()-prev.timerStart)/60000))});
@@ -2942,6 +2952,8 @@ function handleLive(act,el){
   return false}
 
 /* typing a project's name in a title picks that project's chip (until a chip is tapped by hand) */
+document.addEventListener('input',e=>{const el=e.target;if(!el.form||!(el.form.id==='whatForm'||el.form.id==='blockForm')||el.name!=='title')return;const m=el.value.match(PROJ_TAG);if(!m)return;
+  const r=takeProjectTag(el.value);if(!r.name)return;const existed=!!projectByName(r.name);const p=findOrCreateProject(r.name);el.value=r.text+(r.text?' ':'');pickProjectChip(el.form,p);haptic(6);toast(existed?`Project: ${p.name}`:`New project “${p.name}” added`)});
 document.addEventListener('input',e=>{const el=e.target;if(!el.form||!(el.form.id==='whatForm'||el.form.id==='blockForm')||el.name!=='title')return;const f=el.form;if(f.dataset.manualProj)return;
   const m=detectProject(el.value)||(()=>{const q=el.value.match(/[#@](?:"([^"]+)"|“([^”]+)”|'([^']+)'|‘([^’]+)’)/);return q?projectByName(q[1]||q[2]||q[3]||q[4]):null})();if(!m)return;
   const hid=f.querySelector('input[name=projectId]');if(!hid||hid.value===m.id)return;hid.value=m.id;$$('[data-name="projectId"]',f).forEach(c=>c.classList.toggle('on',c.dataset.value===m.id));const g=f.querySelector('.icongrid');if(g)g.style.setProperty('--c',m.color)});
@@ -3182,7 +3194,7 @@ function pushCard(){const s=state.settings;const mine=pushMine();const subs=Obje
 function handlePush(act){switch(act){case'push:on':pushOn();return true;case'push:off':pushOff();return true;case'push:test':pushTest();return true;case'push:timer':state.settings.pushTimer=state.settings.pushTimer===false;saveSettings();refreshSheet();return true}return false}
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.12.1';
+const APP_VERSION='1.12.2';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);

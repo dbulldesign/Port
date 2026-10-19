@@ -1,4 +1,4 @@
 {
-  "version": "1.12.1",
-  "notes": "Dragging and stretching blocks snaps to half hours"
+  "version": "1.12.2",
+  "notes": "#\"Project\" in a block or timer name sets the project and is removed from the name"
 }
