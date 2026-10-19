@@ -1,4 +1,4 @@
 {
-  "version": "1.8.0",
-  "notes": "Timer pause, catch-up, check-in and default projects; undo for done; add time by hand"
+  "version": "1.9.0",
+  "notes": "Recurring to dos, deadlines, capacity by weekday, reorder by dragging, select several at once"
 }

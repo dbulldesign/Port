@@ -42,6 +42,14 @@ Everything runs on the device:
 
 Preferences (focus hours, buffer, breaks, lunch) are in Settings → Scheduling.
 
+## To dos
+
+- **Recurring:** type "every friday", "every day", "every weekday", "every 3 days", "weekly", "every other week" or "monthly", or set Repeat in a to do's details. Completing one lines up the next.
+- **Deadlines:** "by friday" or "due 30 oct" sets a deadline separate from the day you plan to do it. Rows show "Due Fri" (orange when close, red when past) and the smart scheduler gives them priority.
+- **Reorder by hand:** hold a to do and drag it up or down the list; a blue line shows where it lands.
+- **Select several:** ··· → Select…, or shift-click on a computer. Then mark done, move to a day, move blocks earlier or later, change project or delete, all with Undo.
+- **Capacity by day:** Settings → Capacity by day (for example 8h weekdays, 2h Saturday, Sunday off).
+
 ## Projects
 
 - **Smart tagging:** write a project's name anywhere in a to do or quick block ("Call Focus Lighting about fixtures") and it joins that project; the words stay in the title. Type `#"Project Name"` (curly quotes from the phone keyboard work too) to create a project that doesn't exist yet, or connect to one that does. A plain `#word` that matches a project's name means that project; otherwise it's a tag.
