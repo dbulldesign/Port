@@ -1,4 +1,4 @@
 {
-  "version": "1.7.1",
-  "notes": "Blocks are at least 30 minutes; a stopped timer rounds to the half hour"
+  "version": "1.7.2",
+  "notes": "A stopped timer rounds its time to the half hour everywhere"
 }

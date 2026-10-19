@@ -1463,7 +1463,7 @@ function blockSheet(id){return()=>{
   return`${snav('',{act:'sheet:close',label:'Close'},{act:'block:edit',id,label:'Edit'})}
   <div class="shead" style="${cvars(col)}"><h2><span class="bic">${ico(blockIcon(b),2.1)}</span>${esc(b.title)}</h2><div class="sub">${esc(fmtDay(b.date))}, ${fmtTime(b.start)} – ${fmtTime(blockEnd(b))} (${fmtDur(b.duration)})${b.routineId?', repeats':''}${p?`, ${esc(p.name)}`:''}</div>${pvaLine(tasks)}</div>
   <div class="sbody" style="${cvars(col)}">
-    ${(b.fromTimer||b.liveTask)&&!b.live?`<div class="card" style="margin-bottom:14px"><button class="frow" data-act="block:edit" data-id="${id}" style="width:100%"><label style="min-width:0;flex:1">Timer<small style="display:block;font-size:13px;color:var(--label2)">Started ${fmtTimeShort(b.start)}, ended ${fmtTimeShort(blockEnd(b))} · ${fmtDur(b.duration)}${b.ran&&b.ran!==b.duration?` (ran ${fmtDur(b.ran)})`:''}</small></label><span class="val" style="flex:none;color:var(--tint)">Edit end</span>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>`:''}
+    ${(b.fromTimer||b.liveTask)&&!b.live?`<div class="card" style="margin-bottom:14px"><button class="frow" data-act="block:edit" data-id="${id}" style="width:100%"><label style="min-width:0;flex:1">Timer<small style="display:block;font-size:13px;color:var(--label2)">Started ${fmtTimeShort(b.start)}, ended ${fmtTimeShort(blockEnd(b))} · ${fmtDur(b.duration)}</small></label><span class="val" style="flex:none;color:var(--tint)">Edit end</span>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>`:''}
     <div class="card" style="padding:8px 0 4px"><div class="todo-h" style="padding-left:20px"><span class="dotted"></span>Tasks</div><ul class="list">${tasks.map((t,i)=>taskRow(t,{i})).join('')||`<div class="empty" style="padding-top:6px">Nothing scheduled yet. Add a to do below${isWide()?', or drag one in':', or hold one in the list and carry it here'}.</div>`}</ul>
       ${ui.adding&&ui.adding.kind==='block'&&ui.adding.id===id?`<div class="newrow" style="padding-left:20px"><span class="plus">${I.plus}</span><input class="newinput" placeholder="New To Do" aria-label="New to do" autocomplete="off" enterkeyhint="done" data-act="new:text" autofocus></div>`:`<button class="newrow ${tasks.length?'':'dim'}" style="padding-left:20px" data-act="todo:newInBlock" data-id="${id}"><span class="plus">${I.plus}</span>New To Do</button>`}</div>
     <div class="btnrow">${b.live?`<button class="btn primary" data-act="live:stop" style="--c:#FF453A">Stop timer · <span class="trun tabular" data-start="${b.liveStart}">${fmtClock(liveElapsedSec(b))}</span></button>`:b.date===todayYmd()&&blockEnd(b)>nowMin()?`<button class="btn primary" data-act="live:startBlock" data-id="${id}">${I.play.replace('<svg','<svg style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:4px"')}Start timer</button>`:''}<button class="btn ${b.live||!(b.date===todayYmd()&&blockEnd(b)>nowMin())?'primary':''}" data-act="block:focus" data-id="${id}">Focus</button><button class="btn ${b.anchored?'anchored':''}" data-act="block:anchor" data-id="${id}" aria-pressed="${!!b.anchored}">${ico('anchor',2.2).replace('<svg','<svg style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:5px"')}${b.anchored?'Anchored':'Anchor in'}</button>${left?`<button class="btn" data-act="focus:moveLeft" data-id="${id}">Move what’s left</button>`:''}</div>
@@ -2731,16 +2731,18 @@ function startLive(o={}){
   toast(task?'Timing “'+task.title+'”':b.untitled?'Timer started. Say what it’s for when you stop.':'Timing “'+b.title+'”');return b}
 function stopLive(o={}){
   const b=liveBlock();if(!b)return null;
-  const today=b.date===todayYmd();const mins=Math.max(1,Math.round(liveElapsedSec(b)/60));
+  const today=b.date===todayYmd();const real=Math.max(1,Math.round(liveElapsedSec(b)/60));
+  /* the timer ends on the half hour: the block, the logged time and the message all use the rounded figure */
+  const mins=roundTo30(real);
   const task=b.liveTask&&state.tasks[b.liveTask];
-  if(task&&task.timerStart)put('tasks',task.id,{...task,timerStart:null,actual:(task.actual||0)+Math.max(1,Math.round((Date.now()-task.timerStart)/60000))});
-  /* a timer-made block is exactly as long as it ran; a scheduled block only grows if the timer ran past its end */
-  const ran=today?Math.max(mins,nowMin()+1-b.start):mins;
+  if(task&&task.timerStart)put('tasks',task.id,{...task,timerStart:null,actual:(task.actual||0)+roundTo30(Math.max(1,Math.round((Date.now()-task.timerStart)/60000)))});
+  /* a timer-made block is as long as the rounded run; a scheduled block only grows if the timer ran past its end */
+  const ran=today?Math.max(real,nowMin()+1-b.start):real;
   let duration=b.fromTimer?roundTo30(ran):Math.max(b.duration,roundTo30(ran));duration=Math.max(MIN_BLOCK,Math.min(1440-b.start,duration));
-  const nb={...b,duration,ran:b.fromTimer?mins:(b.ran||mins)};delete nb.live;delete nb.liveStart;put('blocks',b.id,nb);
+  const nb={...b,duration};delete nb.live;delete nb.liveStart;delete nb.ran;put('blocks',b.id,nb);
   renderApp();refreshSheet();
   if(o.silent)return nb;
-  if(nb.untitled){closeAllSheets();openSheet(whatForSheet(nb.id))}else toast('Logged '+fmtDur(mins)+(task?' on “'+task.title+'”':'')+(nb.duration!==mins&&b.fromTimer?', block rounded to '+fmtDur(nb.duration):''));
+  if(nb.untitled){closeAllSheets();openSheet(whatForSheet(nb.id))}else toast('Logged '+fmtDur(mins)+(task?' on “'+task.title+'”':''));
   return nb}
 const liveSaid=new Set();
 function liveTick(force){
@@ -2763,7 +2765,7 @@ function tickLive(){
 function whatForSheet(id){return()=>{const b=state.blocks[id];if(!b)return`${snav('Time logged',{act:'sheet:close',label:'Close'})}<div class="sbody"><div class="empty">This block was removed.</div></div>`;
   const cands=sortTasks(tasksArr().filter(t=>!t.done)).slice(0,12);
   return`${snav('What was that for?',{act:'live:skip',id,label:'Later'},{act:'noop',label:'Save',form:'whatForm'})}<div class="sbody"><form id="whatForm" data-act="live:name" data-id="${id}">
-    <div class="fnote" style="padding:0 0 10px">${b.live?`Running since ${fmtTimeShort(b.start)}.`:`${fmtDur(b.ran||b.duration)} from ${fmtTimeShort(b.start)}${b.ran&&b.ran!==b.duration?`, kept as a ${fmtDur(b.duration)} block`:''}.`} Give it a name, or pick the to do it belongs to.</div>
+    <div class="fnote" style="padding:0 0 10px">${b.live?`Running since ${fmtTimeShort(b.start)}.`:`${fmtDur(b.duration)} from ${fmtTimeShort(b.start)}.`} Give it a name, or pick the to do it belongs to.</div>
     <div class="card"><div class="frow big"><input name="title" placeholder="What did you work on?" autofocus autocomplete="off" aria-label="Name"></div></div>
     <div class="fnote" style="padding-top:14px">Project</div><div class="card" style="margin-top:6px">${projectChips(b.projectId)}</div>
     ${cands.length?`<div class="fnote" style="padding-top:14px">Or log it on a to do</div><div class="card" style="margin-top:6px">${cands.map(t=>`<button type="button" class="pick" data-act="live:pickTask" data-id="${id}" data-task="${t.id}" style="${cvars(colorOf(t.projectId))}"><span class="bic">${ico(t.projectId&&state.projects[t.projectId]?(state.projects[t.projectId].icon||'tag'):'inbox',2)}</span><div class="pt"><div>${esc(t.title)}</div><small>${t.projectId&&state.projects[t.projectId]?esc(state.projects[t.projectId].name):'Inbox'}${t.est?', ~'+fmtDur(t.est):''}${t.actual?', '+fmtDur(t.actual)+' logged':''}</small></div></button>`).join('')}</div>`:''}
@@ -2802,7 +2804,7 @@ document.addEventListener('click',e=>{const c=e.target.closest('#whatForm [data-
     const est=tasks.reduce((s,t)=>s+(t.est||0),0),act=tasks.reduce((s,t)=>s+(t.actual||0),0);
     return`<div class="hc-t">${b.anchored?ico('anchor',2.4).replace('<svg','<svg class="hc-i"'):''}${esc(b.live&&b.untitled?'Timer running':b.title)}</div>
       <div class="hc-p" style="--c:${pr?pr.color:NOCOLOR}"><i class="pdot" style="background:var(--c)"></i>${pr?esc(pr.name):'No project'}</div>
-      <div class="hc-s">${esc(fmtDay(b.date))} · ${fmtTime(b.start)} – ${fmtTime(blockEnd(b))} · ${fmtDur(blockEnd(b)-b.start)}${b.live?' · running':''}${b.ran&&b.ran!==b.duration?' · ran '+fmtDur(b.ran):''}${b.routineId?' · repeats':''}</div>
+      <div class="hc-s">${esc(fmtDay(b.date))} · ${fmtTime(b.start)} – ${fmtTime(blockEnd(b))} · ${fmtDur(blockEnd(b)-b.start)}${b.live?' · running':''}${b.routineId?' · repeats':''}</div>
       ${lt&&lt.title!==b.title?`<div class="hc-s">Timing: ${esc(lt.title)}</div>`:''}
       ${b.notes?`<div class="hc-n">${esc(b.notes)}</div>`:''}
       ${tasks.length?`<ul class="hc-l">${tasks.map(t=>`<li class="${t.done?'done':''}"><i></i><span>${esc(t.title)}</span>${t.est||t.actual?`<em>${t.actual?fmtDur(t.actual)+(t.est?' / '+fmtDur(t.est):''):fmtDur(t.est)}</em>`:''}${subsOf(t).length?`<em>${subsOf(t).filter(x=>x.done).length}/${subsOf(t).length}</em>`:''}${t.notes?`<small>${esc(t.notes)}</small>`:''}</li>`).join('')}</ul>${est||act?`<div class="hc-n">${act?fmtDur(act)+' logged':''}${act&&est?' · ':''}${est?fmtDur(est)+' estimated':''}</div>`:''}`:''}`};
@@ -2831,7 +2833,7 @@ document.addEventListener('click',e=>{const c=e.target.closest('#whatForm [data-
 })();
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.7.1';
+const APP_VERSION='1.7.2';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
