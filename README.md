@@ -70,12 +70,19 @@ Preferences (focus hours, buffer, breaks, lunch) are in Settings → Scheduling.
 - **Block sizes:** no block is shorter than 30 minutes, so everything stays readable. A running timer is the one exception: it shows its real length and time while it runs. When it stops, the time rounds to the nearest half hour (never down by more than a couple of minutes): a 23-minute timer becomes 30 minutes on the block and on the to do it was logged against.
 - **When you stop** (tap the pill): if the timer was started from a to do or a block, Port just logs the time. If it was a blank timer, it asks what the time was for: type a name and project, or pick the to do it belongs to. Tap **Later** to keep it as "Untitled time" and name it from the block whenever you like.
 
+## Tools (Settings → Tools)
+
+- **Timesheet:** day, week or month; time per project and per block (timers included), plus time logged on to dos. **CSV** exports every block with date, times, minutes, hours, project and to dos.
+- **Templates:** save a typical day or week of blocks and lay it onto any day or week in one tap (also from Schedule). Blocks already there aren't duplicated.
+- **Quick add:** `…/Port/?add=Call Sam tomorrow` adds a to do and `?block=Gym 6pm 1h` adds a block, from a bookmark, a Siri Shortcut or anywhere. On Android and desktop Chrome, an installed Port also appears in the share menu.
+- **Backup:** download everything as one file, export to dos as CSV, and restore from a backup (bring everything back, or merge keeping newer changes).
+
 ## Calendar views
 
 - **Phone:** the **D / W / M** switch at the top left of the calendar shows a day, the whole week, or the month. Swipe sideways to move by a day, a week or a month.
 - **Desktop / iPad:** next to 1 / 3 / 5 days there are **Week** and **Month**; the arrows move by the same amount.
 - **Move things by dragging.** In Day and Week, hold a block (or just drag it with a mouse) to move it to another time or another day; drag its bottom edge to change how long it lasts (5-minute steps). In Month, drag an event's dot or title onto another day. Every move has an Undo.
-- Tap a day (in the week header or a month square) to open that day. In Month, coloured dots (or titles on a wide screen) are blocks and calendar events; the small blue number is how many to dos are due. Drag a to do onto a month day to plan it for that day.
+- Tap a day (in the week header or a month square) to open that day. In Month, hold a day on the phone (or hover with a mouse) for a quick look at everything on it. In Month, coloured dots (or titles on a wide screen) are blocks and calendar events; the small blue number is how many to dos are due. Drag a to do onto a month day to plan it for that day.
 - Keyboard: `d`, `w`, `m` switch views; `←` `→` move.
 
 ## Daily flow

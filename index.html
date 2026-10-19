@@ -764,6 +764,9 @@ body.selecting .task.compact.sel .inner::after{left:20px}
 .tl-grid.cmp .block .bic svg{width:11px;height:11px}
 .tl-grid.cmp .block .bt{font-size:13px}
 .tl-grid.cmp .block .bm,.tl-grid.cmp .block ul{margin-left:0;font-size:12px}
+.qa{font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--label2);background:var(--fill2);border-radius:8px;padding:8px 10px;margin:6px 0 10px;word-break:break-all}
+code{font:12px ui-monospace,Menlo,monospace;background:var(--fill2);padding:1px 5px;border-radius:5px}
+.mday{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .tl-grid.narrow .allday{font-size:9px;left:1px;right:1px}
 .mgrid{display:flex;flex-direction:column;min-height:100%;padding:52px 6px 8px}
 .mhead{display:grid;grid-template-columns:repeat(7,1fr);font-size:11px;font-weight:600;color:var(--cal-ink2);text-align:center;padding-bottom:4px}
@@ -957,8 +960,8 @@ const I={
 };
 
 /* ============ state & persistence (standalone: local first, GitHub Gist sync) ============ */
-const COLLS=['projects','tasks','blocks','routines','days','objectives'];
-const state={projects:{},tasks:{},blocks:{},routines:{},days:{},objectives:{},settings:{dayStart:6,dayEnd:23,theme:'auto',notify:false,days:3},del:Object.fromEntries(COLLS.map(c=>[c,{}]))};
+const COLLS=['projects','tasks','blocks','routines','days','objectives','templates'];
+const state={projects:{},tasks:{},blocks:{},routines:{},days:{},objectives:{},templates:{},settings:{dayStart:6,dayEnd:23,theme:'auto',notify:false,days:3},del:Object.fromEntries(COLLS.map(c=>[c,{}]))};
 const ui={view:'today',date:todayYmd(),page:null,focusBlockId:null,showDone:false,tray:'closed',scrolledToNow:false};
 const LS_KEY='port-planner-v1';
 const SEC_KEY='port-secrets-v1';
@@ -1604,6 +1607,14 @@ function settingsSheet(){return()=>{
       <button class="frow" data-act="archive:open" style="width:100%"><label style="min-width:0;flex:1">Archived to dos<small style="display:block;font-size:13px;color:var(--label2)">${allTasks().filter(t=>t.archived).length} kept for history</small></label>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>
     ${isWide()?`<div class="card" style="margin-top:14px"><button class="frow" data-act="keys:open" style="width:100%"><label style="min-width:0;flex:1">Keyboard shortcuts<small style="display:block;font-size:13px;color:var(--label2)">Press ? anytime</small></label>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>`:''}
     <div class="card" style="margin-top:14px"><button class="frow" data-act="sync:open" style="width:100%"><label style="min-width:0;flex:1;display:flex;align-items:center;gap:10px"><span class="syncdot ${dbStatus}"></span><span>Sync across devices<small style="display:block;font-size:13px;color:var(--label2)" class="sync-status">${syncStatusText()}</small></span></label>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>
+    <div class="fnote" style="padding-top:14px">Tools</div><div class="card" style="margin-top:6px">
+      <button class="frow" data-act="ts:open" style="width:100%"><label style="min-width:0;flex:1">Timesheet<small style="display:block;font-size:13px;color:var(--label2)">Time per project and block, export as CSV</small></label>${I.chevR.replace('<svg','<svg class="chevr"')}</button>
+      <button class="frow" data-act="tpl:open" style="width:100%"><label style="min-width:0;flex:1">Templates<small style="display:block;font-size:13px;color:var(--label2)">${templates().length?templates().length+' saved':'Save a typical day or week'}</small></label>${I.chevR.replace('<svg','<svg class="chevr"')}</button>
+      <button class="frow" data-act="qa:open" style="width:100%"><label style="min-width:0;flex:1">Quick add<small style="display:block;font-size:13px;color:var(--label2)">Links, Siri Shortcut and the share menu</small></label>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>
+    <div class="fnote" style="padding-top:14px">Backup</div><div class="card" style="margin-top:6px">
+      <button class="frow" data-act="bk:save" style="width:100%"><label style="min-width:0;flex:1;color:var(--tint)">Download a backup<small style="display:block;font-size:13px;color:var(--label2)">${(()=>{let t=0;try{t=+localStorage.getItem(LS_KEY+':backupAt')||0}catch(e){}return t?'Last one '+ago(t):'Everything, as one file'})()}</small></label></button>
+      <button class="frow" data-act="bk:csv" style="width:100%"><label style="min-width:0;flex:1;color:var(--tint)">Export to dos as CSV</label></button>
+      <label class="frow" style="cursor:pointer"><span style="flex:1;color:var(--tint)">Restore from a backup…</span><input type="file" accept=".json,application/json" data-act="bk:file" style="display:none"></label></div>
     ${installCard()}
     <div class="status">Smart capture understands dates (today, tmrw, fri, 15 oct, in 3 days), times (9am, 14:30), estimates (30m, 1h), #tags and ! to !!!. Write a project’s name anywhere and the to do joins it; #“New Name” makes a project.</div>
   </div>`;
@@ -1833,7 +1844,7 @@ document.addEventListener('pointerdown',e=>{
   if(task){if(e.target.closest('.swr'))return;G.pending={kind:'task',el:task,id:task.dataset.task,sx:e.clientX,sy:e.clientY,mouse:e.pointerType==='mouse',draggable:!!task.closest('.draggable')}}
   else if(block&&block.closest('.timeline')){const live=block.classList.contains('live');const br=block.getBoundingClientRect();G.pending={kind:'block',el:block,id:block.dataset.id,sx:e.clientX,sy:e.clientY,mouse:e.pointerType==='mouse',draggable:!live,edge:!live&&e.clientY>br.bottom-18&&br.height>=40}}
   else if(proj&&proj.dataset.pid!=='inbox'){G.pending={kind:'proj',el:proj,id:proj.dataset.pid,sx:e.clientX,sy:e.clientY,mouse:e.pointerType==='mouse'};if(!G.pending.mouse)G.timer=setTimeout(()=>{if(G.pending&&!G.mode){G.mode='projedit';haptic(12);openSheet(projectSheet(G.pending.id))}},480);return}
-  else if(e.target.closest('.mgrid')&&!isWide()){G.pending={kind:'mswipe',el:e.target.closest('.mgrid'),sx:e.clientX,sy:e.clientY};return}
+  else if(e.target.closest('.mgrid')&&e.pointerType!=='mouse'){const cell=e.target.closest('.mday');G.pending={kind:'mswipe',el:e.target.closest('.mgrid'),sx:e.clientX,sy:e.clientY};if(cell)G.timer=setTimeout(()=>{if(G.pending&&!G.mode){G.mode='mpeek';haptic(8);showPeek(cell,dayPeekHtml(cell.dataset.day))}},450);return}
   else{const col=e.target.closest('.daycol');if(col&&!e.target.closest('.block')){if(PROV){return}G.pending={kind:'slot',el:col,sx:e.clientX,sy:e.clientY,mouse:e.pointerType==='mouse',start:slotTime(col,e.clientY)};
       G.timer=setTimeout(()=>{const p=G.pending;if(p&&!G.mode){G.mode='slotdrag';haptic(14);createProvisional(p.el,p.start);p.offset=e.clientY-(p.el.getBoundingClientRect().top+(p.start-state.settings.dayStart*60)/60*hourPx())}},420);return}
     return}
@@ -1843,6 +1854,7 @@ function gestureMove(e){
   const p=G.pending;if(!p)return;const dx=e.clientX-p.sx,dy=e.clientY-p.sy;
   if(G.mode==='drag'){moveDrag(e);return}
   if(G.mode==='bresize'){moveResize(e);return}
+  if(G.mode==='mpeek')return;
   if(G.mode==='swipe'){moveSwipe(dx);return}
   if(G.mode==='sheet'){p.el.style.transition='none';p.el.style.transform=`translate3d(0,${dy>0?dy:dy*.15}px,0)`;const ov=$('#overlay');if(ov)ov.style.background=`rgba(0,0,0,${Math.max(.15,.5-Math.max(0,dy)/1200)})`;return}
   if(G.mode==='calresize'){const pts=calPoints();let h=p.h0+dy;if(h<pts.min)h=pts.min-(pts.min-h)*.22;else if(h>pts.full)h=pts.full+(h-pts.full)*.22;p.el.style.height=h+'px';return}
@@ -1855,7 +1867,7 @@ function gestureMove(e){
   if(p.kind==='dh'){if(ad<8&&ady<8)return;if(ady>ad){G.mode='calresize';calAnimStop();p.el.classList.add('resizing');p.sy=e.clientY;p.h0=p.el.offsetHeight}else{G.mode='dayswipe';p.sx=e.clientX}clearTimeout(G.timer);return}
   if(p.kind==='proj'){if(ad>6||ady>6){clearTimeout(G.timer);G.pending=null}return}
   if(ad<7&&ady<7)return;
-  if(p.kind==='mswipe'){if(ad>ady)G.mode='dayswipe';else G.pending=null;return}
+  if(p.kind==='mswipe'){clearTimeout(G.timer);if(ad>ady&&!isWide())G.mode='dayswipe';else G.pending=null;return}
   if(p.kind==='slot'){clearTimeout(G.timer);if(p.mouse&&ady>ad){G.mode='draw';createProvisional(p.el,Math.min(p.start,slotTime(p.el,e.clientY)),Math.max(MIN_BLOCK,Math.abs(slotTime(p.el,e.clientY)-p.start)));return}if(ad>ady&&!isWide()){G.mode='dayswipe';return}G.pending=null;return}
   if(p.mouse){if(p.kind==='block'&&p.edge)startResize();else if(p.draggable)liftDrag();else G.pending=null;return}
   if(ad>ady&&p.kind==='task'){clearTimeout(G.timer);G.mode='swipe';startSwipe(p.el);moveSwipe(dx);return}
@@ -1877,6 +1889,7 @@ function endGesture(e,cancelled){
   const dx=e?e.clientX-p.sx:0,dy=e?e.clientY-p.sy:0;const mode=G.mode;
   if(mode==='drag')endDrag(e,cancelled);
   else if(mode==='bresize')endResize(cancelled);
+  else if(mode==='mpeek'){hidePeek();G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300)}
   else if(mode==='swipe')endSwipe(V.x);
   else if(mode==='sheet'){const el=p.el,y=Math.max(0,dy),vy=cancelled?0:V.y*1000,ov=$('#overlay');
     if(!cancelled&&(dy>110||(V.y>.5&&dy>30)))dismissSheetFrom(el,y,vy);
@@ -2117,6 +2130,7 @@ function schedSheet(){return()=>{const t=todayYmd();const tm=shiftYmd(t,1);const
       ${sel?row('sched:plan',`data-date="${sel}"`,SCHED_ICON,'Schedule '+esc(fmtDay(sel)),'','#FF9F0A'):''}</div>
     <div class="fnote" style="padding-top:14px">Running late?</div><div class="card" style="margin-top:6px"><div class="frow"><label style="min-width:0;flex:1">Push the rest of today</label><div class="chips" style="padding:0;background:none;flex-wrap:nowrap">${[15,30,60].map(m=>`<button class="chip sm" data-act="sched:push" data-m="${m}">${fmtDur(m)}</button>`).join('')}</div></div>
       ${cf.size?`<div class="frow"><label style="min-width:0;flex:1;color:var(--orange)">${cf.size} blocks overlap today</label><button class="btn sm" data-act="sched:fix" data-date="${t}">Fix</button></div>`:''}</div>
+    <div class="card" style="margin-top:14px"><button class="frow" data-act="tpl:open" style="width:100%"><label style="min-width:0;flex:1">Templates<small style="display:block;font-size:13px;color:var(--label2)">Lay a saved day or week on ${esc(fmtDay(ui.date).toLowerCase())}</small></label>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>
     <div class="fnote" style="padding-top:14px">Quick block</div><div class="card" style="margin-top:6px"><form class="frow" data-act="sched:quick" style="gap:8px"><input placeholder="Gym tomorrow 6pm 1h" aria-label="Quick block" autocomplete="off" enterkeyhint="done"><button type="submit" class="btn sm primary">Add</button></form></div>
     <div class="fnote">No time given? It goes in the next free gap. Add @Project to colour it.</div>
     <div class="card" style="margin-top:14px"><button class="frow" data-act="sched:settings" style="width:100%"><label style="min-width:0;flex:1">Scheduling preferences<small style="display:block;font-size:13px;color:var(--label2)">Focus ${fmtTimeShort(P().focusS)}–${fmtTimeShort(P().focusE)}, ${P().buffer}m buffer, ${P().breakAfter?'break after '+fmtDur(P().breakAfter):'no breaks'}</small></label>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>
@@ -2373,6 +2387,7 @@ function weekReviewSheet(){return()=>{const ws=weekStartOf(ui.date);const s=week
     <div class="card"><div class="stats">${stat(s.done,'done')}${stat(s.total-s.done,'open')}${stat(fmtDur(s.focus),'in blocks')}${stat(s.actual?fmtDur(s.actual):'–','logged')}${stat(s.planned?fmtDur(s.planned):'–','estimated')}${stat(`${s.objDone}/${s.objTotal}`,'objectives')}</div></div>
     ${objectivesHtml(ui.date)}
     ${objectiveReview(ws)}
+    <div class="card" style="margin-top:14px"><button class="frow" data-act="ts:open" style="width:100%"><label style="min-width:0;flex:1;color:var(--tint)">Open the timesheet</label>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>
     ${pvaHtml(ws)}
     <div class="card" style="margin-top:14px"><form class="frow" data-act="review:save" data-week="W${ws}" style="display:block"><b>Notes for the week</b><textarea name="notes" class="rinput" rows="4" placeholder="What went well, what to carry forward">${esc(d.reflection||'')}</textarea><div style="text-align:right;margin-top:8px"><button type="submit" class="btn sm primary">Save</button></div></form></div></div>`}}
 function promptSheet(title,value,placeholder,cb){return()=>`${snav(title,{act:'sheet:close',label:'Cancel'},{act:'noop',label:'Save',form:'promptForm'})}<div class="sbody"><form id="promptForm" data-act="prompt:save"><div class="card"><div class="frow big"><input name="v" value="${esc(value||'')}" placeholder="${esc(placeholder)}" autofocus autocomplete="off" aria-label="${esc(title)}"></div></div></form></div>`}
@@ -2406,7 +2421,7 @@ function handleExtra(act,el,e){
     case'ritual:auto':{if(!R.applied)applyPlanRitual();R.boxed=autoTimebox(R.date);haptic(10);renderApp();drawSheet();break}
     case'ritual:finish':{const k=R.kind;if(k==='plan'){if(!R.applied)applyPlanRitual();else setDay(R.date,{objective:R.obj.trim(),planned:true});toast('Day planned')}else{finishShutdown();toast('Day closed. See you tomorrow')}R=null;closeAllSheets();haptic(12);renderApp();
       setTimeout(()=>burst(innerWidth/2,innerHeight*.42,k==='plan'?'#FF9F0A':'#5E5CE6'),60);break}
-    default:if(!handleView(act,el)&&!handleLive(act,el)&&!handleSel(act,el))handleMore(act,el,e);
+    default:if(!handleView(act,el)&&!handleLive(act,el)&&!handleSel(act,el)&&!handleR3(act,el))handleMore(act,el,e);
   }
 }
 document.addEventListener('input',e=>{const el=e.target;if(!R)return;if(el.dataset.act==='ritual:obj')R.obj=el.value;if(el.dataset.act==='ritual:refl')R.refl=el.value});
@@ -2486,7 +2501,7 @@ function cmdActions(){const t=todayYmd();return[
   ['Smart schedule today','bolt','s',()=>{SP=smartPlan(t,{fill:false});if(!SP.blocks.length&&SP.canFill)SP=smartPlan(t,{fill:true});openSheet(smartSheet)}],
   ['Focus','timer','f',()=>handle('focus:open',document.body)],[liveBlock()?'Stop the timer':'Start a timer','timer','',()=>liveBlock()?stopLive():startLive({})],['Go to today','calendar','t',()=>setDate(t,t>ui.date?'next':'prev')],
   ['Week review','star','',()=>openSheet(weekReviewSheet())],['Archived to dos','archive','',()=>openSheet(archiveSheet)],['Calendars','calendar','',()=>openSheet(calSheet)],
-  ['Keyboard shortcuts','keyboard','?',()=>openSheet(keysSheet)],['Check for updates','bolt','',()=>checkUpdate(true)],['Sync now','bolt','',()=>{if(!secrets.token||!sync.gistId){openSheet(syncSheet());return}toast('Syncing…');runSync().then(()=>toast(dbStatus==='synced'?'Synced':'Sync problem: '+sync.error))}],['Settings','tag','',()=>openSheet(settingsSheet())]]}
+  ['Keyboard shortcuts','keyboard','?',()=>openSheet(keysSheet)],['Check for updates','bolt','',()=>checkUpdate(true)],['Timesheet','calendar','',()=>handle('ts:open',document.body)],['Templates','grid','',()=>handle('tpl:open',document.body)],['Download a backup','archive','',()=>backupNow()],['Sync now','bolt','',()=>{if(!secrets.token||!sync.gistId){openSheet(syncSheet());return}toast('Syncing…');runSync().then(()=>toast(dbStatus==='synced'?'Synced':'Sync problem: '+sync.error))}],['Settings','tag','',()=>openSheet(settingsSheet())]]}
 function cmdItems(){const q=CMD.q.trim().toLowerCase();const out=[];
   const words=q.split(/\s+/).filter(Boolean);const tagQ=words.filter(w=>w[0]==='#').map(w=>w.slice(1));const txt=words.filter(w=>w[0]!=='#');
   const hit=s=>txt.every(w=>s.includes(w));
@@ -2897,6 +2912,7 @@ document.addEventListener('click',e=>{const c=e.target.closest('#whatForm [data-
   if(!window.matchMedia('(hover:hover)').matches)return;const card=$('#hovercard');let timer=0,cur=null;
   const hide=()=>{clearTimeout(timer);timer=0;cur=null;card.hidden=true;card.classList.remove('show')};
   const html=el=>{
+    if(el.classList.contains('mday'))return dayPeekHtml(el.dataset.day);
     if(el.classList.contains('ext'))return`<div class="hc-t">${esc(el.dataset.title||'')}</div><div class="hc-s">${esc(el.dataset.when||'')}${el.dataset.cal?' · '+esc(el.dataset.cal):''}</div><div class="hc-n">From a linked calendar (read-only)</div>`;
     const b=state.blocks[el.dataset.id];if(!b)return'';const pr=b.projectId&&state.projects[b.projectId];const tasks=tasksIn(b.id);const lt=b.liveTask&&state.tasks[b.liveTask];
     const est=tasks.reduce((s,t)=>s+(t.est||0),0),act=tasks.reduce((s,t)=>s+(t.actual||0),0);
@@ -2909,7 +2925,7 @@ document.addEventListener('click',e=>{const c=e.target.closest('#whatForm [data-
   const place=(el,x,y)=>{const r=el.getBoundingClientRect();card.style.left='0px';card.style.top='0px';card.hidden=false;const w=card.offsetWidth,h=card.offsetHeight;
     let left=r.right+10,top=Math.max(8,Math.min(innerHeight-h-8,y-20));if(left+w>innerWidth-8)left=r.left-w-10;if(left<8){left=Math.max(8,Math.min(innerWidth-w-8,x-w/2));top=r.bottom+8>innerHeight-h-8?r.top-h-8:r.bottom+8}
     card.style.left=left+'px';card.style.top=top+'px';requestAnimationFrame(()=>card.classList.add('show'))};
-  document.addEventListener('mouseover',e=>{const el=e.target.closest&&e.target.closest('.timeline .block[data-id], .timeline .block.ext');if(!el||el===cur){return}
+  document.addEventListener('mouseover',e=>{const el=e.target.closest&&e.target.closest('.timeline .block[data-id], .timeline .block.ext, .mday[data-day]');if(!el||el===cur){return}
     hide();if(G.mode||PROV||el.classList.contains('preview')||el.classList.contains('provisional'))return;cur=el;const x=e.clientX,y=e.clientY;
     timer=setTimeout(()=>{if(cur!==el||!el.isConnected||G.mode)return;const h=html(el);if(!h)return;card.innerHTML=h;place(el,x,y)},380)});
   document.addEventListener('mouseout',e=>{if(cur&&e.target.closest&&e.target.closest('.block')===cur&&!(e.relatedTarget&&e.relatedTarget.closest&&e.relatedTarget.closest('.block')===cur))hide()});
@@ -3000,8 +3016,104 @@ document.addEventListener('click',e=>{if(!e.shiftKey||ui.selecting)return;const 
 function reorderTask(id,beforeId,listEl){const ids=$$('.task[data-task]',listEl).map(r=>r.dataset.task).filter(x=>x!==id);const i=beforeId?ids.indexOf(beforeId):ids.length;ids.splice(i<0?ids.length:i,0,id);
   ids.forEach((x,k)=>{const t=state.tasks[x];if(t&&t.order!==k*10)put('tasks',x,{...t,order:k*10})});haptic(8);renderApp()}
 
+/* ---- saving files (download on computers, the share sheet on phones) ---- */
+async function saveFile(name,text,type){
+  try{const file=new File([text],name,{type});if(navigator.canShare&&navigator.canShare({files:[file]})&&!isWide()){await navigator.share({files:[file],title:name});return}}catch(e){if(e&&e.name==='AbortError')return}
+  const url=URL.createObjectURL(new Blob([text],{type}));const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},1500)}
+const csvCell=v=>{v=v==null?'':String(v);return/[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+const csvRow=a=>a.map(csvCell).join(',');
+
+/* ---- timesheet ---- */
+ui.ts={span:'week',date:null};
+function tsRange(){const d=ui.ts.date||todayYmd();if(ui.ts.span==='day')return[d];const ws=weekStartOf(d);if(ui.ts.span==='week')return Array.from({length:7},(_,k)=>shiftYmd(ws,k));
+  const x=fromYmd(d);const first=new Date(x.getFullYear(),x.getMonth(),1),last=new Date(x.getFullYear(),x.getMonth()+1,0);const out=[];for(let q=new Date(first);q<=last;q=addDays(q,1))out.push(ymd(q));return out}
+/* time that has happened: blocks that ended (a running timer counts up to now) */
+function tsBlocks(days){const t=todayYmd(),n=nowMin();return days.flatMap(d=>blocksOn(d)).filter(b=>b.date<t||(b.date===t&&(b.live||blockEnd(b)<=n))).map(b=>{const end=b.live?nowMin():blockEnd(b);return{b,mins:b.live?Math.max(1,Math.round(liveElapsedSec(b)/60)):end-b.start,end}})}
+function tsLabel(){const days=tsRange();const a=fromYmd(days[0]),z=fromYmd(days[days.length-1]);if(ui.ts.span==='day')return fmtLong(days[0]);if(ui.ts.span==='month')return MNL[a.getMonth()]+' '+a.getFullYear();return`${a.getDate()} ${MN[a.getMonth()]} – ${z.getDate()} ${MN[z.getMonth()]}`}
+function timesheetSheet(){return()=>{const days=tsRange();const rows=tsBlocks(days);const total=rows.reduce((s,r)=>s+r.mins,0);
+  const by=new Map();rows.forEach(r=>{const k=r.b.projectId&&state.projects[r.b.projectId]?r.b.projectId:'';if(!by.has(k))by.set(k,[]);by.get(k).push(r)});
+  const groups=[...by.entries()].map(([k,l])=>({k,l,m:l.reduce((s,r)=>s+r.mins,0)})).sort((a,b)=>b.m-a.m);
+  const logged=allTasks().filter(t=>t.actual&&(days.includes(taskDay(t))||(t.doneAt&&days.includes(ymd(new Date(t.doneAt))))));
+  return`${snav('Timesheet',{act:'sheet:close',label:'Close'},{act:'ts:csv',label:'CSV'})}<div class="sbody">
+    <div class="frow" style="background:none;padding:0 0 10px;gap:8px"><button class="navbtn press" data-act="ts:prev" aria-label="Earlier">${I.chevL}</button><b style="flex:1;text-align:center;font-size:15px">${esc(tsLabel())}</b><button class="navbtn press" data-act="ts:next" aria-label="Later">${I.chevR}</button></div>
+    <div class="seg" style="margin:0 auto 14px;width:max-content">${[['day','Day'],['week','Week'],['month','Month']].map(([k,l])=>`<button class="${ui.ts.span===k?'on':''}" data-act="ts:span" data-v="${k}">${l}</button>`).join('')}</div>
+    <div class="card"><div class="stats"><div class="stat"><b>${fmtDur(total)}</b><span>tracked</span></div><div class="stat"><b>${rows.length}</b><span>blocks</span></div><div class="stat"><b>${groups.length}</b><span>projects</span></div></div></div>
+    ${groups.map(g=>{const p=state.projects[g.k];return`<div class="fnote" style="padding-top:14px;display:flex;justify-content:space-between"><span>${p?`<i class="pdot" style="background:${p.color};margin-right:6px"></i>${esc(p.name)}`:'No project'}</span><b>${fmtDur(g.m)}</b></div>
+      <div class="card" style="margin-top:6px">${g.l.sort((a,b)=>(a.b.date+pad(a.b.start)).localeCompare(b.b.date+pad(b.b.start))).map(r=>{const ts=tasksIn(r.b.id);return`<div class="rrow"><div class="rt"><div>${esc(r.b.untitled?'Untitled time':r.b.title)}</div><small>${days.length>1?esc(fmtDay(r.b.date))+', ':''}${fmtTimeShort(r.b.start)}–${fmtTimeShort(r.end)}${ts.length?' · '+esc(ts.map(t=>t.title).join(', ')):''}</small></div><b style="font-size:14px">${fmtDur(r.mins)}</b></div>`}).join('')}</div>`}).join('')||'<div class="card" style="margin-top:14px"><div class="empty">Nothing tracked in this period yet.</div></div>'}
+    ${logged.length?`<div class="fnote" style="padding-top:14px">Time logged on to dos</div><div class="card" style="margin-top:6px">${logged.map(t=>`<div class="rrow"><div class="rt"><div>${esc(t.title)}</div><small>${t.projectId&&state.projects[t.projectId]?esc(state.projects[t.projectId].name):'Inbox'}${t.done?' · done':''}</small></div><b style="font-size:14px">${fmtDur(t.actual)}</b></div>`).join('')}</div>`:''}
+    <div class="fnote" style="padding-top:12px">Counts blocks that have happened, including timers. CSV includes every block with its project and to dos.</div></div>`}}
+function timesheetCsv(){const days=tsRange();const rows=tsBlocks(days);
+  const out=[csvRow(['Date','Start','End','Minutes','Hours','Project','Block','To dos','Notes'])];
+  rows.sort((a,b)=>(a.b.date+pad(a.b.start)).localeCompare(b.b.date+pad(b.b.start))).forEach(r=>{const p=r.b.projectId&&state.projects[r.b.projectId];out.push(csvRow([r.b.date,toHM(r.b.start),toHM(r.end%1440),r.mins,(r.mins/60).toFixed(2),p?p.name:'',r.b.untitled?'Untitled time':r.b.title,tasksIn(r.b.id).map(t=>t.title).join('; '),r.b.notes||'']))});
+  saveFile(`port-timesheet-${days[0]}${days.length>1?'-to-'+days[days.length-1]:''}.csv`,out.join('\n'),'text/csv')}
+
+/* ---- templates: save a day or week of blocks and lay it on another ---- */
+const templates=()=>Object.values(state.templates||{}).sort((a,b)=>a.name.localeCompare(b.name));
+function saveTemplate(kind,name){const id=uid('tp');let items;
+  if(kind==='day')items=blocksOn(ui.date).filter(b=>!b.live).map(b=>({o:0,title:b.untitled?'Untitled time':b.title,start:b.start,duration:Math.max(MIN_BLOCK,b.duration),projectId:b.projectId||null,icon:b.icon||null,anchored:!!b.anchored}));
+  else{const ws=weekStartOf(ui.date);items=Array.from({length:7},(_,k)=>shiftYmd(ws,k)).flatMap((d,k)=>blocksOn(d).filter(b=>!b.live).map(b=>({o:k,title:b.untitled?'Untitled time':b.title,start:b.start,duration:Math.max(MIN_BLOCK,b.duration),projectId:b.projectId||null,icon:b.icon||null,anchored:!!b.anchored})))}
+  if(!items.length){toast(kind==='day'?'This day has no blocks to save':'This week has no blocks to save');return}
+  put('templates',id,{id,name,kind,items,createdAt:Date.now()});toast(`Saved “${name}” (${items.length} block${items.length===1?'':'s'})`)}
+function applyTemplate(id,date){const tp=state.templates[id];if(!tp)return;const snap=snapshotState();const base=tp.kind==='week'?weekStartOf(date):date;let n=0;
+  tp.items.forEach(it=>{const d=shiftYmd(base,it.o);if(blocksOn(d).some(b=>b.title===it.title&&b.start===it.start))return;const bid=createBlock({title:it.title,date:d,start:it.start,duration:it.duration,projectId:it.projectId&&state.projects[it.projectId]?it.projectId:null,icon:it.icon});if(it.anchored)put('blocks',bid,{...state.blocks[bid],anchored:true});n++});
+  renderApp();toast(n?`Added ${n} block${n===1?'':'s'} from “${tp.name}”`:'Those blocks are already there',n?{label:'Undo',fn:()=>restoreSnapshot(snap)}:undefined)}
+function templatesSheet(){return()=>{const list=templates();const d=ui.date;const ws=weekStartOf(d);const we=shiftYmd(ws,6);
+  return`${snav('Templates',{act:'sheet:close',label:'Close'})}<div class="sbody">
+    <div class="card"><button class="frow" data-act="tpl:save" data-kind="day" style="width:100%"><label style="min-width:0;flex:1;color:var(--tint)">Save ${esc(fmtDay(d).toLowerCase())} as a template<small style="display:block;font-size:13px;color:var(--label2)">${blocksOn(d).length} block${blocksOn(d).length===1?'':'s'}</small></label></button>
+      <button class="frow" data-act="tpl:save" data-kind="week" style="width:100%"><label style="min-width:0;flex:1;color:var(--tint)">Save this week as a template<small style="display:block;font-size:13px;color:var(--label2)">${fromYmd(ws).getDate()} ${MN[fromYmd(ws).getMonth()]} – ${fromYmd(we).getDate()} ${MN[fromYmd(we).getMonth()]}</small></label></button></div>
+    ${list.length?`<div class="fnote" style="padding-top:14px">Apply to ${esc(fmtDay(d).toLowerCase())} or its week</div><div class="card" style="margin-top:6px">${list.map(t=>`<div class="prow"><button class="pick" data-act="tpl:apply" data-id="${t.id}"><span class="bic" style="background:var(--tint)">${ico(t.kind==='week'?'grid':'calendar',2)}</span><div class="pt"><div>${esc(t.name)}</div><small>${t.kind==='week'?'Week':'Day'} · ${t.items.length} block${t.items.length===1?'':'s'}: ${esc(t.items.slice(0,3).map(i=>i.title).join(', '))}${t.items.length>3?'…':''}</small></div></button><button class="projedit press" data-act="tpl:delete" data-id="${t.id}" aria-label="Delete ${esc(t.name)}">×</button></div>`).join('')}</div>`:'<div class="fnote" style="padding-top:14px">No templates yet. Lay out a typical day (standup, deep work, lunch, gym), then save it here.</div>'}
+    <div class="fnote" style="padding-top:12px">Applying skips blocks that are already there at the same time.</div></div>`}}
+
+/* ---- backup ---- */
+function backupNow(){saveFile(`port-backup-${todayYmd()}.json`,JSON.stringify({app:'Port',version:APP_VERSION,exportedAt:new Date().toISOString(),...exportState()},null,1),'application/json');try{localStorage.setItem(LS_KEY+':backupAt',String(Date.now()))}catch(e){}}
+function exportTodosCsv(){const out=[csvRow(['Title','Project','Done','Planned day','Deadline','Estimate (min)','Logged (min)','Urgency','Tags','Repeat','Notes'])];
+  allTasks().forEach(t=>{const p=t.projectId&&state.projects[t.projectId];out.push(csvRow([t.title,p?p.name:'',t.done?'yes':'',taskDay(t)||'',t.deadline||'',t.est||'',t.actual||'',t.urgency||'',tagsOf(t).join(' '),repeatLabel(t.repeat)||'',t.notes||'']))});
+  saveFile(`port-todos-${todayYmd()}.csv`,out.join('\n'),'text/csv')}
+function restoreBackup(file){file.text().then(txt=>{let j;try{j=JSON.parse(txt)}catch(e){toast('That file isn’t a Port backup');return}if(!j||!j.tasks||!j.blocks){toast('That file isn’t a Port backup');return}
+  confirmAction('Restore this backup?',`From ${j.exportedAt?new Date(j.exportedAt).toLocaleString():'an earlier save'}. Bring back restores everything in it, including things deleted since; your newer additions stay. Merge keeps whichever version is newer.`,[{label:'Bring back everything in the backup',cls:'',fn:()=>{const snap=snapshotState();let n=0;COLLS.forEach(c=>Object.entries(j[c]||{}).forEach(([id,v])=>{if(JSON.stringify(state[c][id]||null)!==JSON.stringify(v)){put(c,id,v);n++}}));materialized.clear();syncRoutines();renderApp();toast(`Restored ${n} item${n===1?'':'s'} from the backup`,{label:'Undo',fn:()=>restoreSnapshot(snap)})}},{label:'Merge, keeping newer changes',cls:'',fn:()=>{const snap=snapshotState();const m=mergeStates(exportState(),j);COLLS.forEach(c=>state[c]=m[c]||{});state.del=m.del;state.settings={...state.settings,...m.settings};saveLocal();scheduleSync();materialized.clear();syncRoutines();renderApp();toast('Backup merged',{label:'Undo',fn:()=>restoreSnapshot(snap)})}}])})}
+
+/* ---- quick add from a link, a shortcut or the share sheet ---- */
+function quickAddFromUrl(){const q=new URLSearchParams(location.search);if(location.hash==='#timesheet'){history.replaceState(null,'',location.pathname+location.search);setTimeout(()=>handle('ts:open',document.body),500)}
+  if(q.has('add')&&!q.get('add')){history.replaceState(null,'',location.pathname);setTimeout(shortcutNew,500);return}
+  const add=q.get('add'),blk=q.get('block');const st=q.get('title'),sx=q.get('text'),su=q.get('url');if(!add&&!blk&&!st&&!sx&&!su)return;
+  history.replaceState(null,'',location.pathname+location.hash);
+  setTimeout(()=>{if(blk){const r=quickBlock(blk);if(r.err){toast(r.err);return}ui.date=r.date;renderApp();toast(`Added “${state.blocks[r.id].title}” at ${fmtTimeShort(r.start)}`);return}
+    const urlInText=sx&&/^https?:\/\//.test(sx.trim())?sx.trim():null;const link=su||urlInText;const words=add||[st,urlInText?'':sx].filter(Boolean).join(' — ')||link||'Shared item';
+    const t=createTaskFromText(words,{});if(link&&!add)put('tasks',t.id,{...state.tasks[t.id],notes:link});renderApp();toast(`Added “${t.title}” to ${t.projectId&&state.projects[t.projectId]?state.projects[t.projectId].name:'Inbox'}`)},600)}
+function quickAddSheet(){return()=>{const base=location.origin+location.pathname;
+  return`${snav('Quick add',{act:'sheet:close',label:'Done'})}<div class="sbody">
+    <div class="card"><div class="frow" style="display:block"><b>A link that adds a to do</b><div class="fnote" style="padding:4px 0 8px">Open it from anywhere and Port adds what comes after <code>add=</code> to your Inbox, with dates, @projects and #tags understood.</div><div class="qa">${esc(base)}?add=Call%20Sam%20tomorrow</div><button class="btn sm" data-act="qa:copy" data-v="${esc(base)}?add=">Copy link start</button></div>
+      <div class="frow" style="display:block"><b>A link that adds a block</b><div class="qa">${esc(base)}?block=Gym%206pm%201h</div><button class="btn sm" data-act="qa:copy" data-v="${esc(base)}?block=">Copy link start</button></div></div>
+    <div class="fnote" style="padding-top:14px">iPhone: Siri Shortcut</div><div class="card" style="margin-top:6px"><div class="frow" style="display:block"><div class="fnote" style="padding:0">In the Shortcuts app make a shortcut: <b>Ask for Input</b> (Text) → <b>URL Encode</b> → <b>Text</b> “${esc(base)}?add=” followed by the encoded input → <b>Open URLs</b>. Name it “Add to Port” and say “Hey Siri, add to Port”. It opens in Safari, so turn on sync in Safari too and the to do reaches every device.</div></div></div>
+    <div class="fnote" style="padding-top:14px">Android and desktop Chrome</div><div class="card" style="margin-top:6px"><div class="frow" style="display:block"><div class="fnote" style="padding:0">Once Port is installed, it appears in the share menu: share a page or some text to Port and it lands in your Inbox, with the link saved in the notes.</div></div></div></div>`}}
+
+/* ---- month: hold a day (or hover it) to peek ---- */
+function dayPeekHtml(d){const bl=blocksOn(d),ev=extOn(d),td=tasksForDay(d);const items=[...ev.filter(x=>x.allDay).map(x=>({t:x.title,c:x.color,s:null,ext:1})),...bl.map(b=>({t:b.untitled?'Untitled time':b.title,c:colorOf(b.projectId),s:b.start,e:blockEnd(b),p:b.projectId&&state.projects[b.projectId]?state.projects[b.projectId].name:''})),...ev.filter(x=>!x.allDay).map(x=>({t:x.title,c:x.color,s:x.start,e:x.start+x.duration,ext:1}))].sort((a,b)=>(a.s??-1)-(b.s??-1));
+  return`<div class="hc-t">${esc(fmtLong(d))}</div>${items.length?`<ul class="hc-l">${items.map(x=>`<li><i style="background:${x.c};border-color:${x.c}"></i><span>${esc(x.t)}${x.p?` <em>· ${esc(x.p)}</em>`:''}</span><em>${x.s==null?'all day':fmtTimeShort(x.s)+'–'+fmtTimeShort(x.e)}</em></li>`).join('')}</ul>`:'<div class="hc-n">Nothing on the calendar.</div>'}
+    ${td.length?`<div class="hc-n">${td.filter(t=>!t.done).length} to do${td.filter(t=>!t.done).length===1?'':'s'} planned${td.some(t=>t.done)?`, ${td.filter(t=>t.done).length} done`:''}</div>`:''}`}
+function showPeek(el,html){const card=$('#hovercard');card.innerHTML=html;card.style.left='0px';card.style.top='0px';card.hidden=false;const r=el.getBoundingClientRect();const w=card.offsetWidth,h=card.offsetHeight;
+  let left=Math.max(8,Math.min(innerWidth-w-8,r.left+r.width/2-w/2));let top=r.top-h-10;if(top<8)top=Math.min(innerHeight-h-8,r.bottom+10);card.style.left=left+'px';card.style.top=top+'px';requestAnimationFrame(()=>card.classList.add('show'))}
+function hidePeek(){const card=$('#hovercard');if(card){card.hidden=true;card.classList.remove('show')}}
+
+function handleR3(act,el){
+  switch(act){
+    case'ts:open':ui.ts.date=ui.date;closeAllSheets();openSheet(timesheetSheet());return true;
+    case'ts:span':ui.ts.span=el.dataset.v;redrawSheet();return true;
+    case'ts:prev':case'ts:next':{const dir=act==='ts:next'?1:-1;const d=ui.ts.date||todayYmd();if(ui.ts.span==='day')ui.ts.date=shiftYmd(d,dir);else if(ui.ts.span==='week')ui.ts.date=shiftYmd(d,7*dir);else{const x=fromYmd(d);ui.ts.date=ymd(new Date(x.getFullYear(),x.getMonth()+dir,1))}redrawSheet();return true}
+    case'ts:csv':timesheetCsv();return true;
+    case'tpl:open':closeAllSheets();openSheet(templatesSheet());return true;
+    case'tpl:save':{const kind=el.dataset.kind;askText(kind==='day'?'Name this day template':'Name this week template','',kind==='day'?'e.g. Office day':'e.g. Normal week',v=>{if(!v)return;saveTemplate(kind,v);openSheet(templatesSheet())});return true}
+    case'tpl:apply':{const id=el.dataset.id;closeAllSheets();applyTemplate(id,ui.date);return true}
+    case'tpl:delete':{const t=state.templates[el.dataset.id];if(!t)return true;confirmAction(`Delete “${t.name}”?`,'Blocks already added from it stay.',[{label:'Delete template',cls:'danger',fn:()=>{put('templates',t.id,null);openSheet(templatesSheet())}}]);return true}
+    case'bk:save':backupNow();return true;
+    case'bk:csv':exportTodosCsv();return true;
+    case'bk:file':{const f=el.files&&el.files[0];if(f)restoreBackup(f);el.value='';return true}
+    case'qa:open':openSheet(quickAddSheet());return true;
+    case'qa:copy':(navigator.clipboard?navigator.clipboard.writeText(el.dataset.v).then(()=>toast('Copied')):Promise.reject()).catch(()=>toast('Couldn’t copy'));return true;
+  }return false}
+
 /* ---- version & updates ---- */
-const APP_VERSION='1.9.0';
+const APP_VERSION='1.10.0';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
@@ -3042,7 +3154,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-act^="upd:
 })();
 
 /* ---- init ---- */
-loadLocal();applyTheme();autoArchive();syncRoutines();renderApp();initDb();setTimeout(autoRollover,2500);setTimeout(()=>refreshCals(false),1500);setInterval(()=>{if(!document.hidden)refreshCals(false)},10*60000);
+loadLocal();applyTheme();autoArchive();quickAddFromUrl();syncRoutines();renderApp();initDb();setTimeout(autoRollover,2500);setTimeout(()=>refreshCals(false),1500);setInterval(()=>{if(!document.hidden)refreshCals(false)},10*60000);
 setInterval(tickFocus,1000);
 setInterval(()=>{updateNowLine();checkNotify()},20000);
 let lastDay=todayYmd();
