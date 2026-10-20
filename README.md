@@ -59,6 +59,7 @@ Preferences (focus hours, buffer, breaks, lunch) are in Settings → Scheduling.
 - **All** (first in the project list, next to Inbox) shows every to do from every project in one list, each marked with its project's name and colour. New to dos added there go to the Inbox.
 - On the phone, projects sit along the bottom as icon bubbles (the current one shows its name and open count; the others show a count badge). Tap the grid button at the left for the full list with a search box; tap ··· on a row to edit it, or hold a bubble.
 - On a computer, Port keeps the computer layout (to do panel beside the calendar, projects listed by name) even in a small window, down to about 560 pixels wide, touchscreen laptops included.
+- In a smaller computer window the project list moves into its own scrolling pane under the to dos (with the same Find box); the to do list scrolls on its own above it.
 - On a wide screen (desktop, iPad landscape) projects are listed in a sidebar with a **Find a project** box: type a few letters and press Enter to jump to the first match. Press `g` to get to the box from anywhere.
 
 ## Blocks

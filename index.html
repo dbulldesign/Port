@@ -494,7 +494,7 @@ svg{display:block}
   .task .inner{cursor:pointer}
   .focusview{left:var(--panel)}
 }
-@media (min-width:1100px){
+@media (min-width:900px), (hover:hover) and (pointer:fine) and (min-width:600px){
   .sidebar{width:232px;flex:none;display:flex;flex-direction:column;background:var(--side);border-right:.5px solid var(--sep);min-height:0}
   .sfind{display:flex;align-items:center;gap:8px;margin:14px 12px 8px;padding:8px 10px;border-radius:10px;background:var(--fill2)}
   .sfind svg{width:15px;height:15px;color:var(--label3);flex:none}
@@ -527,6 +527,11 @@ svg{display:block}
   .ptitle .cnt{font-size:15px;color:var(--label3);font-weight:500;align-self:flex-end;margin-bottom:4px}
   .ptitle .more{margin-left:auto;color:var(--tint);font-size:14px;font-weight:500}
 }
+/* narrower computer windows: the project list sits in its own scrolling pane under the to dos */
+.panel .sidebar.ppane{width:auto;flex:0 1 auto;max-height:42%;min-height:150px;border-right:0;border-top:.5px solid var(--sep);background:var(--side)}
+.panel .sidebar.ppane .sfind{margin:10px 12px 6px}
+.panel .sidebar.ppane .sfoot{padding:6px 10px 8px}
+.panel .sidebar.ppane .plabel{padding-top:10px}
 
 /* ---- more: animations ---- */
 @keyframes slideout{to{transform:translateX(42px);opacity:0}}
@@ -1425,7 +1430,7 @@ function mobileShell(){
 const hasSidebar=()=>window.matchMedia('(min-width:1100px)').matches;
 function wideShell(){
   const side=hasSidebar();
-  return`<div class="screen ${ui.mode==='week'?'week':''} ${side?'side':''}">${side?projSidebar():''}<aside class="panel">${side?panelTitle():projbar()}<div class="desk"><div class="todo-card" style="--c:${projColor()}">${todoHtml()}</div></div></aside>
+  return`<div class="screen ${ui.mode==='week'?'week':''} ${side?'side':''}">${side?projSidebar():''}<aside class="panel">${panelTitle()}<div class="desk"><div class="todo-card" style="--c:${projColor()}">${todoHtml()}</div></div>${side?'':projSidebar(true)}</aside>
     <section class="mainwrap"><div class="cal"><div class="datehead">${dateheadWide()}</div><div class="calpills widepills">${schedPill()}${focusPill()}</div><div class="timeline">${timelineHtml()}</div></div></section>${ui.focus?focusHtml():''}</div>`;
 }
 function dateheadMobile(){
@@ -2889,11 +2894,11 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches&&e.
 
 /* ---- desktop project sidebar ---- */
 ui.projFilter='';
-function projSidebar(){
+function projSidebar(pane){
   const ps=Object.values(state.projects).sort((a,b)=>a.name.localeCompare(b.name));
   const cnt=pidCount;
   const item=(pid,name,icon,color)=>{const n=cnt(pid);return`<button class="proj ${ui.pid===pid?'on':''}" data-act="proj:select" data-pid="${pid}" ${pid==='all'?'':`data-project="${pid==='inbox'?'':pid}"`} data-name="${esc(name.toLowerCase())}" style="--c:${color}"><span class="pic">${ico(icon,2.2)}</span><span class="pn">${esc(name)}</span><span class="cnt">${n||''}</span></button>`};
-  return`<nav class="sidebar" aria-label="Projects">
+  return`<nav class="sidebar ${pane?'ppane':''}" aria-label="Projects">
     <div class="sfind">${ico('search',2.2)}<input class="projfind" placeholder="Find a project" value="${esc(ui.projFilter)}" autocomplete="off" aria-label="Find a project"></div>
     <div class="plist">${item('all','All to dos','stack',ALLC)}${item('inbox','Inbox','inbox','#0A84FF')}
       <div class="plabel">Projects <span>${ps.length||''}</span></div>
@@ -3297,7 +3302,7 @@ function pushCard(){const s=state.settings;const mine=pushMine();const subs=Obje
 function handlePush(act){switch(act){case'push:on':pushOn();return true;case'push:off':pushOff();return true;case'push:test':pushTest();return true;case'push:timer':state.settings.pushTimer=state.settings.pushTimer===false;saveSettings();refreshSheet();return true}return false}
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.14.0';
+const APP_VERSION='1.14.1';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
