@@ -376,6 +376,8 @@ svg{display:block}
 .task.compact{border-radius:12px;margin:3px 8px}
 .task.compact .inner{padding:7px 12px;gap:10px;min-height:40px;background:var(--card);border-radius:12px}
 .task.compact .name{font-size:15px}
+/* keep the swipe colours from showing round the rounded corners */
+.task.compact .swl,.task.compact .swr{clip-path:inset(1px round 11px)}
 .task.compact .pname,.task.wp .pname{display:block;font-size:12px;color:var(--label2);margin-top:2px}
 .task.compact .pname .pdot,.task.wp .pname .pdot{width:6px;height:6px;margin-right:4px}
 .task.wp .pname{font-size:13px;font-weight:500;color:color-mix(in srgb,var(--c) 70%,var(--label))}
@@ -527,6 +529,16 @@ svg{display:block}
   .ptitle .cnt{font-size:15px;color:var(--label3);font-weight:500;align-self:flex-end;margin-bottom:4px}
   .ptitle .more{margin-left:auto;color:var(--tint);font-size:14px;font-weight:500}
 }
+/* computer layout: the to do panel only ever scrolls up and down; the week's days wrap into rows that fit */
+@media (min-width:900px), (hover:hover) and (pointer:fine) and (min-width:600px){
+  .panel .todo-card{overflow-x:hidden}
+  .panel .kanban{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));align-items:start;overflow-x:visible;scroll-snap-type:none}
+  .panel .kcol,.screen.week .panel .kcol{width:auto;min-width:0}
+  .panel .todo-h{flex-wrap:wrap;row-gap:6px}
+  .panel .task .name{overflow-wrap:anywhere;min-width:0}
+}
+/* below a full-size window the week keeps the normal panel width so the calendar isn't squeezed */
+@media (max-width:1099px){.screen.week .panel{width:var(--panel)}}
 /* narrower computer windows: the project list sits in its own scrolling pane under the to dos */
 .panel .sidebar.ppane{width:auto;flex:0 1 auto;max-height:42%;min-height:150px;border-right:0;border-top:.5px solid var(--sep);background:var(--side)}
 .panel .sidebar.ppane .sfind{margin:10px 12px 6px}
@@ -3302,7 +3314,7 @@ function pushCard(){const s=state.settings;const mine=pushMine();const subs=Obje
 function handlePush(act){switch(act){case'push:on':pushOn();return true;case'push:off':pushOff();return true;case'push:test':pushTest();return true;case'push:timer':state.settings.pushTimer=state.settings.pushTimer===false;saveSettings();refreshSheet();return true}return false}
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.14.1';
+const APP_VERSION='1.14.2';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
