@@ -376,8 +376,10 @@ svg{display:block}
 .task.compact{border-radius:12px;margin:3px 8px}
 .task.compact .inner{padding:7px 12px;gap:10px;min-height:40px;background:var(--card);border-radius:12px}
 .task.compact .name{font-size:15px}
-.task.compact .pname{display:block;font-size:12px;color:var(--label2);margin-top:2px}
-.task.compact .pname .pdot{width:6px;height:6px;margin-right:4px}
+.task.compact .pname,.task.wp .pname{display:block;font-size:12px;color:var(--label2);margin-top:2px}
+.task.compact .pname .pdot,.task.wp .pname .pdot{width:6px;height:6px;margin-right:4px}
+.task.wp .pname{font-size:13px;font-weight:500;color:color-mix(in srgb,var(--c) 70%,var(--label))}
+.task.wp .pname .pdot{width:8px;height:8px}
 .task.compact .check{width:20px;height:20px}
 .newrow.compact{padding:6px 12px;min-height:40px}
 .newrow.compact input{font-size:15px}
@@ -924,7 +926,11 @@ function fmtDur(m){const h=Math.floor(m/60),mi=m%60;return((h?h+'h':'')+(mi?(h?'
 function fmtClock(sec){sec=Math.max(0,Math.round(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;return(h?h+':'+pad(m):m)+':'+pad(s)}
 const toHM=m=>pad(Math.floor(m/60))+':'+pad(m%60);
 const fromHM=s=>{const [h,m]=(s||'0:0').split(':').map(Number);return(h||0)*60+(m||0)};
-const WIDE_Q='(min-width:900px), (hover:hover) and (pointer:fine) and (min-width:600px)';
+/* a phone or tablet gets the computer layout from 900px; a computer keeps it down to 560px, touchscreen or not */
+const IS_COMPUTER=!/iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent)&&!(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const WIDE_Q=IS_COMPUTER?'(min-width:560px)':'(min-width:900px)';
+/* the stylesheet's wide rules follow the same test */
+try{for(const sh of document.styleSheets)for(const r of sh.cssRules)if(r.media&&/pointer:\s*fine/.test(r.media.mediaText))r.media.mediaText=WIDE_Q}catch(e){}
 const isWide=()=>window.matchMedia(WIDE_Q).matches;
 const syncWideClass=()=>document.documentElement.classList.toggle('wide',isWide());syncWideClass();
 const hourPx=()=>isWide()?60:72;
@@ -1487,21 +1493,24 @@ function dayColHtml(date){
 }
 
 /* ---- to do card ---- */
-function tasksOfCurrent(){const pid=ui.pid;return tasksArr().filter(t=>pid==='inbox'?!t.projectId:t.projectId===pid)}
+function tasksOfCurrent(){const pid=ui.pid;return tasksArr().filter(t=>pid==='all'||(pid==='inbox'?!t.projectId:t.projectId===pid))}
+/* open to dos in a section of the project list; "all" counts every project */
+const pidCount=pid=>tasksArr().filter(t=>!t.done&&(pid==='all'||(pid==='inbox'?!t.projectId:t.projectId===pid))).length;
+const ALLC='#8E8E93';
 function listModeHtml(){
   const tags=allTags();if(ui.tag&&!tags.includes(ui.tag))ui.tag=null;
-  const all=tasksOfCurrent().filter(t=>!ui.tag||tagsOf(t).includes(ui.tag));const p=currentProject();
+  const all=tasksOfCurrent().filter(t=>!ui.tag||tagsOf(t).includes(ui.tag));const p=currentProject();const every=ui.pid==='all';
   const todo=sortTasks(all.filter(t=>!t.done&&!t.blockId));const sched=sortTasks(all.filter(t=>!t.done&&t.blockId)).sort((a,b)=>{const A=state.blocks[a.blockId],B=state.blocks[b.blockId];return(A&&B)?(A.date+pad(A.start/60)).localeCompare(B.date+pad(B.start/60)):0});
   const done=all.filter(t=>t.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
   const anim=ui.listAnim?'enter':'';let i=0;
-  const rows=l=>l.map(t=>taskRow(t,{i:i++,showBlock:true,timer:true})).join('');
+  const rows=l=>l.map(t=>taskRow(t,{i:i++,showBlock:true,timer:true,proj:every})).join('');
   return`<div class="todo-h">${modeSeg()}${liveChip()}${dayRing(todayYmd())}<button class="more press" data-act="list:menu" aria-label="More">···</button></div>
     ${syncBanner()}${ritualBanner()}${tags.length?`<div class="tagrow"><button class="objchip ${ui.tag?'':'on'}" data-act="tag:filter" data-v="">All</button>${tags.map(g=>`<button class="objchip ${ui.tag===g?'on':''}" data-act="tag:filter" data-v="${esc(g)}">#${esc(g)}</button>`).join('')}</div>`:''}
     <ul class="list draggable ${anim}">${rows(todo)}</ul>
-    ${!todo.length&&!sched.length&&!ui.adding?`<div class="empty">${p?`Nothing in ${esc(p.name)} yet.`:'Your inbox is clear.'} Add a to do below, then hold it and carry it onto the calendar.</div>`:''}
+    ${!todo.length&&!sched.length&&!ui.adding?`<div class="empty">${p?`Nothing in ${esc(p.name)} yet.`:every?'No to dos anywhere yet.':'Your inbox is clear.'} Add a to do below, then hold it and carry it onto the calendar.</div>`:''}
     ${sched.length?`<div class="divider">Scheduled</div><ul class="list draggable ${anim}">${rows(sched)}</ul>`:''}
     ${ui.adding&&ui.adding.kind==='project'?newRowInput():`<button class="newrow ${todo.length||sched.length?'':'dim'}" data-act="todo:new"><span class="plus">${I.plus}</span>New To Do</button>`}
-    ${done.length?`<button class="divider btn" data-act="done:toggle">${I.checkBig.replace('<svg','<svg style="width:15px;height:15px"')}Completed ${done.length}</button>${ui.showDone?`<ul class="list">${done.slice(0,50).map(t=>taskRow(t,{i:i++})).join('')}</ul>`:''}`:''}`;
+    ${done.length?`<button class="divider btn" data-act="done:toggle">${I.checkBig.replace('<svg','<svg style="width:15px;height:15px"')}Completed ${done.length}</button>${ui.showDone?`<ul class="list">${done.slice(0,50).map(t=>taskRow(t,{i:i++,proj:every})).join('')}</ul>`:''}`:''}`;
 }
 function newRowInput(){
   const t=todayYmd(),tm=shiftYmd(t,1);
@@ -1524,16 +1533,16 @@ function taskRow(t,o={}){
 }
 function projbar(){
   const ps=Object.values(state.projects).sort((a,b)=>a.name.localeCompare(b.name));
-  const cnt=pid=>tasksArr().filter(t=>!t.done&&(pid==='inbox'?!t.projectId:t.projectId===pid)).length;
-  const item=(pid,name,icon,color)=>`<button class="proj ${ui.pid===pid?'on':''}" data-act="proj:select" data-pid="${pid}" data-project="${pid==='inbox'?'':pid}" style="--c:${color}"><span class="pic">${ico(icon,2.2)}</span><span>${esc(name)}</span><span class="cnt">${cnt(pid)||''}</span></button>`;
+  const cnt=pidCount;
+  const item=(pid,name,icon,color)=>`<button class="proj ${ui.pid===pid?'on':''}" data-act="proj:select" data-pid="${pid}" ${pid==='all'?'':`data-project="${pid==='inbox'?'':pid}"`} style="--c:${color}"><span class="pic">${ico(icon,2.2)}</span><span>${esc(name)}</span><span class="cnt">${cnt(pid)||''}</span></button>`;
   if(!isWide()){
     /* phone: icon bubbles, the chosen one shows its name; a grid button opens the full list */
-    const bub=(pid,name,icon,color)=>{const n=cnt(pid);return`<button class="proj bub ${ui.pid===pid?'on':''}" data-act="proj:select" data-pid="${pid}" data-project="${pid==='inbox'?'':pid}" style="--c:${color}" aria-label="${esc(name)}${n?', '+n+' open':''}"><span class="pic">${ico(icon,2.2)}${n&&ui.pid!==pid?`<b class="badge">${n>99?'99+':n}</b>`:''}</span><span class="nm">${esc(name)}</span>${n&&ui.pid===pid?`<span class="cnt">${n}</span>`:''}</button>`};
-    return`<div class="projbar compact"><button class="proj tool press" data-act="projects:open" aria-label="All projects"><span class="pic">${ico('grid',2.2)}</span></button>${bub('inbox','Inbox','inbox','#0A84FF')}${ps.map(p=>bub(p.id,p.name,p.icon||'tag',p.color)).join('')}
+    const bub=(pid,name,icon,color)=>{const n=cnt(pid);return`<button class="proj bub ${ui.pid===pid?'on':''}" title="${esc(name)}" data-act="proj:select" data-pid="${pid}" ${pid==='all'?'':`data-project="${pid==='inbox'?'':pid}"`} style="--c:${color}" aria-label="${esc(name)}${n?', '+n+' open':''}"><span class="pic">${ico(icon,2.2)}${n&&ui.pid!==pid?`<b class="badge">${n>99?'99+':n}</b>`:''}</span><span class="nm">${esc(name)}</span>${n&&ui.pid===pid?`<span class="cnt">${n}</span>`:''}</button>`};
+    return`<div class="projbar compact"><button class="proj tool press" data-act="projects:open" aria-label="All projects"><span class="pic">${ico('grid',2.2)}</span></button>${bub('all','All','stack',ALLC)}${bub('inbox','Inbox','inbox','#0A84FF')}${ps.map(p=>bub(p.id,p.name,p.icon||'tag',p.color)).join('')}
       <button class="proj add press" data-act="project:new" aria-label="New project"><span class="pic">${I.plus}</span></button>
       <button class="proj gear press" data-act="cmd:open" aria-label="Search" style="margin-left:auto"><span class="pic">${ico('search',2.2)}</span></button>
       <button class="proj gear press" data-act="settings:open" aria-label="Settings" style="margin-left:0"><span class="pic">${I.gear}${secrets.token&&sync.gistId?`<span class="syncdot ${dbStatus} gdot"></span>`:''}</span></button></div>`}
-  return`<div class="projbar">${item('inbox','Inbox','inbox','#0A84FF')}${ps.map(p=>item(p.id,p.name,p.icon||'tag',p.color)).join('')}
+  return`<div class="projbar">${item('all','All','stack',ALLC)}${item('inbox','Inbox','inbox','#0A84FF')}${ps.map(p=>item(p.id,p.name,p.icon||'tag',p.color)).join('')}
     <button class="proj add press" data-act="project:new" aria-label="New project"><span class="pic">${I.plus}</span></button>
     <button class="proj tool press" data-act="cmd:open" aria-label="Search">${'<span class="pic">'+ico('search',2.2)+'</span>'}</button>
     <button class="proj gear press" data-act="settings:open" aria-label="Settings"><span class="pic">${I.gear}${secrets.token&&sync.gistId?`<span class="syncdot ${dbStatus} gdot"></span>`:''}</span></button></div>`;
@@ -1738,7 +1747,7 @@ function settingsSheet(){return()=>{
   </div>`;
 }}
 function listMenu(){return()=>{const p=currentProject();
-  return`${snav(p?esc(p.name):'Inbox',{act:'sheet:close',label:'Close'})}<div class="sbody"><div class="stack">
+  return`${snav(p?esc(p.name):ui.pid==='all'?'All to dos':'Inbox',{act:'sheet:close',label:'Close'})}<div class="sbody"><div class="stack">
     ${p?`<button class="btn" data-act="project:edit" data-id="${p.id}">Edit project</button>`:''}
     <button class="btn" data-act="done:toggle">${ui.showDone?'Hide':'Show'} completed</button>
     <button class="btn" data-act="sel:start">Select…</button>
@@ -1810,7 +1819,7 @@ function saveProjectForm(f){const d=readForm(f);const id=f.dataset.id;const name
   if(id){put('projects',id,{...state.projects[id],name,color:d.color,icon:d.icon||'tag'});return id}
   const nid=uid('p');put('projects',nid,{id:nid,name,color:d.color,icon:d.icon||'tag',createdAt:Date.now()});return nid}
 function setDate(s,dir){if(s===ui.date&&!dir)return;ui.dayAnim=dir==='next'?'anim-l':dir==='prev'?'anim-r':'';ui.date=s;ui.scrolledToNow=false;syncRoutines();renderApp()}
-function selectProject(pid){if(pid===ui.pid)return;const order=['inbox',...Object.values(state.projects).sort((a,b)=>a.name.localeCompare(b.name)).map(p=>p.id)];const dir=order.indexOf(pid)>order.indexOf(ui.pid);ui.pid=pid;ui.adding=null;ui.showDone=false;ui.listAnim=true;saveUi();haptic(5);renderApp();const l=$$('.todo-card .list');l.forEach(x=>x.classList.add(dir?'anim-l':'anim-r'))}
+function selectProject(pid){if(pid===ui.pid)return;const order=['all','inbox',...Object.values(state.projects).sort((a,b)=>a.name.localeCompare(b.name)).map(p=>p.id)];const dir=order.indexOf(pid)>order.indexOf(ui.pid);ui.pid=pid;ui.adding=null;ui.showDone=false;ui.listAnim=true;saveUi();haptic(5);renderApp();const l=$$('.todo-card .list');l.forEach(x=>x.classList.add(dir?'anim-l':'anim-r'))}
 function addNewToDo(input){
   const text=input.value.trim();if(!text)return false;
   const a=ui.adding||{kind:'project'};const extra={};
@@ -1963,7 +1972,7 @@ document.addEventListener('pointerdown',e=>{
   if(SW.open&&(!task||task!==SW.open)&&!e.target.closest('.swr'))closeSwipe();
   if(task){if(e.target.closest('.swr'))return;G.pending={kind:'task',el:task,id:task.dataset.task,sx:e.clientX,sy:e.clientY,mouse:e.pointerType==='mouse',draggable:!!task.closest('.draggable')}}
   else if(block&&block.closest('.timeline')){const live=block.classList.contains('live');const br=block.getBoundingClientRect();G.pending={kind:'block',el:block,id:block.dataset.id,sx:e.clientX,sy:e.clientY,mouse:e.pointerType==='mouse',draggable:!live,edge:!live&&e.clientY>br.bottom-18&&br.height>=40}}
-  else if(proj&&proj.dataset.pid!=='inbox'){G.pending={kind:'proj',el:proj,id:proj.dataset.pid,sx:e.clientX,sy:e.clientY,mouse:e.pointerType==='mouse'};if(!G.pending.mouse)G.timer=setTimeout(()=>{if(G.pending&&!G.mode){G.mode='projedit';haptic(12);openSheet(projectSheet(G.pending.id))}},480);return}
+  else if(proj&&proj.dataset.pid!=='inbox'&&proj.dataset.pid!=='all'){G.pending={kind:'proj',el:proj,id:proj.dataset.pid,sx:e.clientX,sy:e.clientY,mouse:e.pointerType==='mouse'};if(!G.pending.mouse)G.timer=setTimeout(()=>{if(G.pending&&!G.mode){G.mode='projedit';haptic(12);openSheet(projectSheet(G.pending.id))}},480);return}
   else if(e.target.closest('.mgrid')&&e.pointerType!=='mouse'){const cell=e.target.closest('.mday');G.pending={kind:'mswipe',el:e.target.closest('.mgrid'),sx:e.clientX,sy:e.clientY};if(cell)G.timer=setTimeout(()=>{if(G.pending&&!G.mode){G.mode='mpeek';haptic(8);showPeek(cell,dayPeekHtml(cell.dataset.day))}},450);return}
   else{const col=e.target.closest('.daycol');if(col&&!e.target.closest('.block')){if(PROV){return}G.pending={kind:'slot',el:col,sx:e.clientX,sy:e.clientY,mouse:e.pointerType==='mouse',start:slotTime(col,e.clientY)};
       G.timer=setTimeout(()=>{const p=G.pending;if(p&&!G.mode){G.mode='slotdrag';haptic(14);createProvisional(p.el,p.start);p.offset=e.clientY-(p.el.getBoundingClientRect().top+(p.start-state.settings.dayStart*60)/60*hourPx())}},420);return}
@@ -2349,8 +2358,8 @@ function taskRow(t,o={}){
   else if(t.due&&!o.compact)right+=`<div class="${over?'over':''}">${over?'Overdue':esc(fmtDay(t.due))}</div>${t.dueTime?`<div>${fmtTimeShort(fromHM(t.dueTime))}</div>`:''}`;
   const timer=o.timer&&!t.done?`<button class="tbtn ${t.timerStart?'run':''}" data-act="timer:toggle" data-id="${t.id}" aria-label="${t.timerStart?'Stop timer':'Start timer'}">${t.timerStart?`<span class="trun tabular" data-start="${t.timerStart}">${fmtClock((Date.now()-t.timerStart)/1000)}</span>${I.stop}`:I.play}</button>`:'';
   const plan=o.plan?`<button class="planbtn" data-act="task:plan" data-id="${t.id}" data-date="${o.plan}">${esc(fmtDay(o.plan))} ›</button>`:'';
-  const pn=o.compact&&t.projectId&&state.projects[t.projectId]?`<span class="pname"><i class="pdot" style="background:${c}"></i>${esc(state.projects[t.projectId].name)}</span>`:'';
-  return`<li class="task ${t.done?'done':''} ${o.compact?'compact':''} ${ui.selecting&&ui.sel.tasks.has(t.id)?'sel':''}" data-task="${t.id}" style="--i:${o.i||0};--c:${c}">
+  const tp=t.projectId&&state.projects[t.projectId];const pn=(o.compact&&tp)||o.proj?`<span class="pname"><i class="pdot" style="background:${c}"></i>${esc(tp?tp.name:'Inbox')}</span>`:'';
+  return`<li class="task ${t.done?'done':''} ${o.compact?'compact':''} ${o.proj?'wp':''} ${ui.selecting&&ui.sel.tasks.has(t.id)?'sel':''}" data-task="${t.id}" style="--i:${o.i||0};--c:${c}">
     <div class="swl">${I.checkBig}</div>
     <div class="swr"><button class="mv" data-act="task:pick" data-id="${t.id}">${I.move}<span>Block</span></button><button class="del" data-act="task:delete" data-id="${t.id}">${I.trash}<span>Delete</span></button></div>
     <div class="inner"><button class="check ${t.done?'on':''}" data-act="task:toggle" data-id="${t.id}" aria-label="${t.done?'Mark as not done':'Mark as done'}">${I.check}</button>
@@ -2550,6 +2559,7 @@ setInterval(()=>{tickTimer();tickLive()},1000);setInterval(()=>liveTick(),30000)
 /* ============ more: steps, tags, search, shortcuts, focus timer, calendars, archive, streaks ============ */
 PI.search='<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>';
 PI.anchor='<circle cx="12" cy="5" r="2.2"/><path d="M12 7.2V21M5 12.5H2.5a9.5 9.5 0 0 0 19 0H19M5 12.5c0 4 3 7 7 8.5 4-1.5 7-4.5 7-8.5"/>';
+PI.stack='<path d="m12 3 9 4.5-9 4.5-9-4.5z"/><path d="m3 12 9 4.5 9-4.5M3 16.5 12 21l9-4.5"/>';
 PI.grid='<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>';
 PI.timer='<circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.5 2M9.5 2.5h5"/>';
 PI.keyboard='<rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6 10h.01M9.5 10h.01M13 10h.01M16.5 10h.01M7.5 14h9"/>';
@@ -2863,41 +2873,41 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches&&e.
 /* ---- phone project list sheet ---- */
 ui.projQ='';
 function projectsSheet(){const ps=Object.values(state.projects).sort((a,b)=>a.name.localeCompare(b.name));const q=ui.projQ.trim().toLowerCase();
-  const cnt=pid=>tasksArr().filter(t=>!t.done&&(pid==='inbox'?!t.projectId:t.projectId===pid)).length;
+  const cnt=pidCount;
   const row=(pid,name,icon,color)=>projRow(pid,name,icon,color,cnt(pid));
   const list=ps.filter(p=>!q||p.name.toLowerCase().includes(q));
   return`${snav('Projects',{act:'sheet:close',label:'Close'},{act:'project:new',label:'New'})}<div class="sbody">
     <button class="btn sm" data-act="projnames:open" style="margin:0 0 10px">Rename projects and # names</button>
     <div class="sfind" style="margin:0 0 12px"><span style="display:contents">${ico('search',2.2)}</span><input class="projq" placeholder="Find a project" value="${esc(ui.projQ)}" autocomplete="off" aria-label="Find a project" ${ps.length>6?'autofocus':''}></div>
-    ${q?'':`<div class="card">${row('inbox','Inbox','inbox','#0A84FF')}</div><div class="fnote" style="padding-top:14px">Projects ${ps.length?'· '+ps.length:''}</div>`}
+    ${q?'':`<div class="card">${row('all','All to dos','stack',ALLC)}${row('inbox','Inbox','inbox','#0A84FF')}</div><div class="fnote" style="padding-top:14px">Projects ${ps.length?'· '+ps.length:''}</div>`}
     <div class="card" style="margin-top:6px" id="projlist">${list.map(p=>row(p.id,p.name,p.icon||'tag',p.color)).join('')||`<div class="empty">${q?'No project matches.':'No projects yet. Tap New to add one.'}</div>`}</div></div>`}
 document.addEventListener('input',e=>{if(!e.target.matches('.projq'))return;ui.projQ=e.target.value;const q=ui.projQ.trim().toLowerCase();const list=$('#projlist');if(!list)return;
   const ps=Object.values(state.projects).sort((a,b)=>a.name.localeCompare(b.name)).filter(p=>!q||p.name.toLowerCase().includes(q));const cnt=pid=>tasksArr().filter(t=>!t.done&&t.projectId===pid).length;
   list.innerHTML=ps.map(p=>projRow(p.id,p.name,p.icon||'tag',p.color,cnt(p.id))).join('')||'<div class="empty">No project matches.</div>'});
-function projRow(pid,name,icon,color,n){const cur=ui.pid===pid;return`<div class="prow ${cur?'cur':''}" style="${cvars(color)}"><button class="pick" data-act="projects:pick" data-pid="${pid}"><span class="bic">${ico(icon,2.1)}</span><div class="pt"><div>${esc(name)}</div>${n?`<small>${n} open</small>`:''}</div>${cur?I.checkBig.replace('<svg','<svg style="width:18px;height:18px;color:var(--tint);flex:none"'):''}</button>${pid==='inbox'?'':`<button class="projedit press" data-act="project:edit" data-id="${pid}" aria-label="Edit ${esc(name)}">···</button>`}</div>`}
+function projRow(pid,name,icon,color,n){const cur=ui.pid===pid;return`<div class="prow ${cur?'cur':''}" style="${cvars(color)}"><button class="pick" data-act="projects:pick" data-pid="${pid}"><span class="bic">${ico(icon,2.1)}</span><div class="pt"><div>${esc(name)}</div>${n?`<small>${n} open</small>`:''}</div>${cur?I.checkBig.replace('<svg','<svg style="width:18px;height:18px;color:var(--tint);flex:none"'):''}</button>${pid==='inbox'||pid==='all'?'':`<button class="projedit press" data-act="project:edit" data-id="${pid}" aria-label="Edit ${esc(name)}">···</button>`}</div>`}
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches&&e.target.matches('.projq')){e.preventDefault();const first=$('#projlist .pick');if(first)handle('projects:pick',first)}});
 
 /* ---- desktop project sidebar ---- */
 ui.projFilter='';
 function projSidebar(){
   const ps=Object.values(state.projects).sort((a,b)=>a.name.localeCompare(b.name));
-  const cnt=pid=>tasksArr().filter(t=>!t.done&&(pid==='inbox'?!t.projectId:t.projectId===pid)).length;
-  const item=(pid,name,icon,color)=>{const n=cnt(pid);return`<button class="proj ${ui.pid===pid?'on':''}" data-act="proj:select" data-pid="${pid}" data-project="${pid==='inbox'?'':pid}" data-name="${esc(name.toLowerCase())}" style="--c:${color}"><span class="pic">${ico(icon,2.2)}</span><span class="pn">${esc(name)}</span><span class="cnt">${n||''}</span></button>`};
+  const cnt=pidCount;
+  const item=(pid,name,icon,color)=>{const n=cnt(pid);return`<button class="proj ${ui.pid===pid?'on':''}" data-act="proj:select" data-pid="${pid}" ${pid==='all'?'':`data-project="${pid==='inbox'?'':pid}"`} data-name="${esc(name.toLowerCase())}" style="--c:${color}"><span class="pic">${ico(icon,2.2)}</span><span class="pn">${esc(name)}</span><span class="cnt">${n||''}</span></button>`};
   return`<nav class="sidebar" aria-label="Projects">
     <div class="sfind">${ico('search',2.2)}<input class="projfind" placeholder="Find a project" value="${esc(ui.projFilter)}" autocomplete="off" aria-label="Find a project"></div>
-    <div class="plist">${item('inbox','Inbox','inbox','#0A84FF')}
+    <div class="plist">${item('all','All to dos','stack',ALLC)}${item('inbox','Inbox','inbox','#0A84FF')}
       <div class="plabel">Projects <span>${ps.length||''}</span></div>
       ${ps.map(p=>item(p.id,p.name,p.icon||'tag',p.color)).join('')||'<div class="pnone">No projects yet.</div>'}
       <div class="pnone" id="pnomatch" hidden>No project matches.</div></div>
     <div class="sfoot"><button class="sbtn press" data-act="project:new">${I.plus}<span>New project</span></button><button class="sbtn icon press" data-act="cmd:open" aria-label="Search">${ico('search',2.2)}</button><button class="sbtn icon press" data-act="settings:open" aria-label="Settings" style="position:relative">${I.gear}${secrets.token&&sync.gistId?`<span class="syncdot ${dbStatus} gdot"></span>`:''}</button></div></nav>`}
-function panelTitle(){const p=currentProject();const n=tasksArr().filter(t=>!t.done&&(p?t.projectId===p.id:!t.projectId)).length;
-  return`<div class="ptitle" style="--c:${p?p.color:'#0A84FF'}"><span class="pic">${ico(p?(p.icon||'tag'):'inbox',2.2)}</span><h1>${esc(p?p.name:'Inbox')}</h1><span class="cnt">${n||''}</span>${p?`<button class="more press" data-act="project:edit" data-id="${p.id}" aria-label="Edit project">Edit</button>`:''}</div>`}
+function panelTitle(){const p=currentProject();const every=ui.pid==='all';const n=pidCount(p?p.id:every?'all':'inbox');
+  return`<div class="ptitle" style="--c:${p?p.color:every?ALLC:'#0A84FF'}"><span class="pic">${ico(p?(p.icon||'tag'):every?'stack':'inbox',2.2)}</span><h1>${esc(p?p.name:every?'All to dos':'Inbox')}</h1><span class="cnt">${n||''}</span>${p?`<button class="more press" data-act="project:edit" data-id="${p.id}" aria-label="Edit project">Edit</button>`:''}</div>`}
 function filterSidebar(){const q=ui.projFilter.trim().toLowerCase();let shown=0;
   $$('.plist .proj[data-project]:not([data-pid="inbox"])').forEach(b=>{const hit=!q||b.dataset.name.includes(q);b.hidden=!hit;if(hit)shown++});
   const nm=$('#pnomatch');if(nm)nm.hidden=!q||shown>0}
 document.addEventListener('input',e=>{if(e.target.matches('.projfind')){ui.projFilter=e.target.value;filterSidebar()}});
 document.addEventListener('keydown',e=>{if(!e.target.matches||!e.target.matches('.projfind'))return;
-  if(e.key==='Enter'){e.preventDefault();const first=$$('.plist .proj[data-pid]').find(b=>!b.hidden&&b.dataset.pid!=='inbox'&&ui.projFilter.trim());if(first){selectProject(first.dataset.pid)}e.target.blur()}
+  if(e.key==='Enter'){e.preventDefault();const first=$$('.plist .proj[data-pid]').find(b=>!b.hidden&&b.dataset.pid!=='inbox'&&b.dataset.pid!=='all'&&ui.projFilter.trim());if(first){selectProject(first.dataset.pid)}e.target.blur()}
   if(e.key==='Escape'){ui.projFilter='';e.target.value='';filterSidebar();e.target.blur()}});
 
 /* ---- calendar views: day, week, month ---- */
@@ -3287,7 +3297,7 @@ function pushCard(){const s=state.settings;const mine=pushMine();const subs=Obje
 function handlePush(act){switch(act){case'push:on':pushOn();return true;case'push:off':pushOff();return true;case'push:test':pushTest();return true;case'push:timer':state.settings.pushTimer=state.settings.pushTimer===false;saveSettings();refreshSheet();return true}return false}
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.13.0';
+const APP_VERSION='1.14.0';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
