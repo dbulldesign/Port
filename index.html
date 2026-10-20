@@ -1279,12 +1279,13 @@ function parseCapture(raw){
   if(!out.projectName){const m=detectProject(text);if(m)out.projectMatch=m.id}
   return out;
 }
-const projectByName=n=>{const l=String(n||'').trim().toLowerCase();return l?Object.values(state.projects).find(p=>p.name.toLowerCase()===l)||null:null};
+const projNames=p=>[p.name,...(Array.isArray(p.aliases)?p.aliases:[])].filter(Boolean);
+const projectByName=n=>{const l=String(n||'').trim().toLowerCase();return l?Object.values(state.projects).find(p=>projNames(p).some(x=>x.toLowerCase()===l))||null:null};
 const PROJ_TAG=/(^|\s)[#@](?:"([^"]+)"|“([^”]+)”|'([^']+)'|‘([^’]+)’)/;
 /* #Name with no quotes: the longest existing project the words after # start with */
 function hashProject(text){const t=String(text||'');const low=t.toLowerCase();let best=null;
   for(let i=0;i<t.length;i++){if(t[i]!=='#'||(i>0&&!/\s/.test(t[i-1]))||/["“'‘]/.test(t[i+1]||''))continue;const rest=low.slice(i+1);
-    for(const p of Object.values(state.projects)){const n=p.name.toLowerCase();if(rest.startsWith(n)&&!/[\p{L}\p{N}]/u.test(rest[n.length]||'')&&(!best||n.length>best.len))best={i,len:n.length+1,p}}}
+    for(const p of Object.values(state.projects))for(const nm of projNames(p)){const n=nm.toLowerCase();if(rest.startsWith(n)&&!/[\p{L}\p{N}]/u.test(rest[n.length]||'')&&(!best||n.length>best.len))best={i,len:n.length+1,p}}}
   return best}
 /* the last bare #… in a title, for suggestions and for making a new project */
 const niceName=n=>n===n.toLowerCase()?n.replace(/(^|\s)(\p{L})/gu,(m,a,b)=>a+b.toUpperCase()):n;
@@ -1297,7 +1298,7 @@ function takeProjectTag(text,o={}){let t=String(text||'');let name=null;
 /* suggestions under a title while typing #… */
 function projSuggest(el){const f=el.form||el.closest('.todo-card,.sheet');let box=f&&f.querySelector('.projsugg');const tl=hashTail(el.value);
   if(!tl){if(box)box.remove();return}
-  const q=tl.q.trim().toLowerCase();const ps=Object.values(state.projects).filter(p=>!q||p.name.toLowerCase().includes(q)).sort((a,b)=>(b.name.toLowerCase().startsWith(q)-a.name.toLowerCase().startsWith(q))||a.name.localeCompare(b.name)).slice(0,5);
+  const q=tl.q.trim().toLowerCase();const ps=Object.values(state.projects).filter(p=>!q||projNames(p).some(x=>x.toLowerCase().includes(q))).sort((a,b)=>(b.name.toLowerCase().startsWith(q)-a.name.toLowerCase().startsWith(q))||a.name.localeCompare(b.name)).slice(0,5);
   const exact=ps.some(p=>p.name.toLowerCase()===q);
   if(!box){box=document.createElement('div');box.className='projsugg';box.setAttribute('role','listbox');(el.closest('.frow')||el.closest('.newrow')).after(box)}
   box.innerHTML=ps.map(p=>`<button type="button" class="chip" data-sug="${p.id}"><i class="pdot" style="background:${p.color}"></i>${esc(p.name)}</button>`).join('')+(q&&!exact?`<button type="button" class="chip newproj" data-sugnew="${esc(tl.q.trim())}">+ New project “${esc(niceName(tl.q.trim()))}”</button>`:'')+(!ps.length&&!q?'<span class="fnote" style="padding:4px 2px">Type a project name</span>':'')}
@@ -1723,6 +1724,7 @@ function settingsSheet(){return()=>{
     ${isWide()?`<div class="card" style="margin-top:14px"><button class="frow" data-act="keys:open" style="width:100%"><label style="min-width:0;flex:1">Keyboard shortcuts<small style="display:block;font-size:13px;color:var(--label2)">Press ? anytime</small></label>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>`:''}
     <div class="card" style="margin-top:14px"><button class="frow" data-act="sync:open" style="width:100%"><label style="min-width:0;flex:1;display:flex;align-items:center;gap:10px"><span class="syncdot ${dbStatus}"></span><span>Sync across devices<small style="display:block;font-size:13px;color:var(--label2)" class="sync-status">${syncStatusText()}</small></span></label>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>
     ${pushCard()}
+    <div class="card" style="margin-top:14px"><button class="frow" data-act="projnames:open" style="width:100%"><label style="min-width:0;flex:1">Projects<small style="display:block;font-size:13px;color:var(--label2)">Rename projects and set short # names</small></label><span class="val">${Object.keys(state.projects).length||''}</span>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>
     <div class="fnote" style="padding-top:14px">Tools</div><div class="card" style="margin-top:6px">
       <button class="frow" data-act="ts:open" style="width:100%"><label style="min-width:0;flex:1">Timesheet<small style="display:block;font-size:13px;color:var(--label2)">Time per project and block, export as CSV</small></label>${I.chevR.replace('<svg','<svg class="chevr"')}</button>
       <button class="frow" data-act="tpl:open" style="width:100%"><label style="min-width:0;flex:1">Templates<small style="display:block;font-size:13px;color:var(--label2)">${templates().length?templates().length+' saved':'Save a typical day or week'}</small></label>${I.chevR.replace('<svg','<svg class="chevr"')}</button>
@@ -2804,6 +2806,7 @@ function handleMore(act,el,e){
     case'banner:hide':try{localStorage.setItem(LS_KEY+':banner',el.dataset.v)}catch(x){}renderApp();break;
     case'banner:hideSync':try{localStorage.setItem(LS_KEY+':syncbanner','1')}catch(x){}renderApp();break;
     case'cmd:open':openCmd();break;
+    case'projnames:open':openSheet(projectNamesSheet());break;
     case'cap:open':openSheet(capacitySheet());break;
     case'projects:open':ui.projQ='';openSheet(projectsSheet);break;
     case'projects:pick':{const pid=el.dataset.pid;closeAllSheets();if(pid!==ui.pid)selectProject(pid);else renderApp();break}
@@ -2837,6 +2840,26 @@ document.addEventListener('input',e=>{const el=e.target;if(!el.matches('#projFor
   const k=guessIcon(el.value)||f.dataset.freshIcon;const inp=f.querySelector('input[name="icon"]');if(!inp||inp.value===k)return;inp.value=k;
   $$('.icongrid [data-name="icon"]',f).forEach(b=>b.classList.toggle('on',b.dataset.value===k))});
 
+/* ---- Settings → Projects: rename and give # short names ---- */
+function projectNamesSheet(){return()=>{const ps=Object.values(state.projects).sort((a,b)=>a.name.localeCompare(b.name));
+  return`${snav('Projects',{act:'sheet:close',label:'Done'},{act:'project:new',label:'New'})}<div class="sbody">
+    <div class="fnote" style="padding:0 0 10px">Rename a project here and every to do and block follows. “Also matches” takes short names for <b>#</b>, separated by commas, e.g. <b>FL, focus</b> so #FL means Focus Lighting.</div>
+    ${ps.length?ps.map(p=>`<div class="card pname-card" style="margin-bottom:12px;${cvars(p.color)}">
+      <div class="frow"><span class="bic" style="width:30px;height:30px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center;flex:none">${ico(p.icon||'tag',2.1).replace('<svg','<svg style="width:15px;height:15px"')}</span><input class="pname-in" data-pid="${p.id}" data-field="name" value="${esc(p.name)}" aria-label="Project name" autocomplete="off" style="font-weight:600"><button class="projedit press" data-act="project:edit" data-id="${p.id}" aria-label="Colour, icon and more for ${esc(p.name)}">···</button></div>
+      <div class="frow"><label style="min-width:0;font-size:14px;color:var(--label2)">Also matches</label><input class="pname-in" data-pid="${p.id}" data-field="aliases" value="${esc((p.aliases||[]).join(', '))}" placeholder="short names for #" aria-label="Short names for ${esc(p.name)}" autocomplete="off" autocapitalize="off" style="text-align:right;font-size:15px"></div>
+      <div class="fnote" style="padding:0 16px 10px">#${esc(p.name)}${(p.aliases||[]).map(a=>' · #'+esc(a)).join('')} · ${tasksArr().filter(t=>t.projectId===p.id&&!t.done).length} open to dos</div></div>`).join(''):'<div class="card"><div class="empty">No projects yet. Tap New, or type #Name in a to do.</div></div>'}
+  </div>`}}
+function saveProjectName(el){const p=state.projects[el.dataset.pid];if(!p)return;
+  if(el.dataset.field==='name'){const v=el.value.trim();if(!v){el.value=p.name;toast('A project needs a name');return}if(v===p.name)return;
+    const clash=Object.values(state.projects).find(x=>x.id!==p.id&&projNames(x).some(n=>n.toLowerCase()===v.toLowerCase()));if(clash){el.value=p.name;toast(`“${v}” is already used by ${clash.name}`);return}
+    put('projects',p.id,{...p,name:v});renderApp();toast(`Renamed to ${v}`)}
+  else{const list=[...new Set(el.value.split(',').map(x=>x.trim().replace(/^#+/,'')).filter(Boolean))];
+    const taken=list.find(a=>Object.values(state.projects).some(x=>x.id!==p.id&&projNames(x).some(n=>n.toLowerCase()===a.toLowerCase())));if(taken){toast(`#${taken} already belongs to another project`);el.value=(p.aliases||[]).join(', ');return}
+    if(JSON.stringify(list)===JSON.stringify(p.aliases||[]))return;put('projects',p.id,{...p,aliases:list});toast(list.length?`#${list.join(', #')} now mean ${p.name}`:'Short names cleared')}
+  const card=el.closest('.pname-card');const pp=state.projects[p.id];if(card&&pp){const n=card.querySelector('.fnote');if(n)n.innerHTML=`#${esc(pp.name)}${(pp.aliases||[]).map(a=>' · #'+esc(a)).join('')} · ${tasksArr().filter(t=>t.projectId===pp.id&&!t.done).length} open to dos`}}
+document.addEventListener('change',e=>{if(e.target.matches&&e.target.matches('.pname-in'))saveProjectName(e.target)});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches&&e.target.matches('.pname-in')){e.preventDefault();e.target.blur()}});
+
 /* ---- phone project list sheet ---- */
 ui.projQ='';
 function projectsSheet(){const ps=Object.values(state.projects).sort((a,b)=>a.name.localeCompare(b.name));const q=ui.projQ.trim().toLowerCase();
@@ -2844,6 +2867,7 @@ function projectsSheet(){const ps=Object.values(state.projects).sort((a,b)=>a.na
   const row=(pid,name,icon,color)=>projRow(pid,name,icon,color,cnt(pid));
   const list=ps.filter(p=>!q||p.name.toLowerCase().includes(q));
   return`${snav('Projects',{act:'sheet:close',label:'Close'},{act:'project:new',label:'New'})}<div class="sbody">
+    <button class="btn sm" data-act="projnames:open" style="margin:0 0 10px">Rename projects and # names</button>
     <div class="sfind" style="margin:0 0 12px"><span style="display:contents">${ico('search',2.2)}</span><input class="projq" placeholder="Find a project" value="${esc(ui.projQ)}" autocomplete="off" aria-label="Find a project" ${ps.length>6?'autofocus':''}></div>
     ${q?'':`<div class="card">${row('inbox','Inbox','inbox','#0A84FF')}</div><div class="fnote" style="padding-top:14px">Projects ${ps.length?'· '+ps.length:''}</div>`}
     <div class="card" style="margin-top:6px" id="projlist">${list.map(p=>row(p.id,p.name,p.icon||'tag',p.color)).join('')||`<div class="empty">${q?'No project matches.':'No projects yet. Tap New to add one.'}</div>`}</div></div>`}
@@ -3263,7 +3287,7 @@ function pushCard(){const s=state.settings;const mine=pushMine();const subs=Obje
 function handlePush(act){switch(act){case'push:on':pushOn();return true;case'push:off':pushOff();return true;case'push:test':pushTest();return true;case'push:timer':state.settings.pushTimer=state.settings.pushTimer===false;saveSettings();refreshSheet();return true}return false}
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.12.5';
+const APP_VERSION='1.13.0';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
