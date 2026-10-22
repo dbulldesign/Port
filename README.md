@@ -44,6 +44,8 @@ Preferences (focus hours, buffer, breaks, lunch) are in Settings → Scheduling.
 
 ## To dos
 
+- **Snooze:** in a to do's details (or Select… → Snooze…) pick Tomorrow, This weekend, Next week, In a month or a day. It disappears from your lists until then and comes back planned for that day. Snoozed ones are listed at the bottom of their project.
+- **All to dos** can be shown by project (with a heading per project), by day, or as one list.
 - **Recurring:** type "every friday", "every day", "every weekday", "every 3 days", "weekly", "every other week" or "monthly", or set Repeat in a to do's details. Completing one lines up the next.
 - **Deadlines:** "by friday" or "due 30 oct" sets a deadline separate from the day you plan to do it. Rows show "Due Fri" (orange when close, red when past) and the smart scheduler gives them priority.
 - **Reorder by hand:** hold a to do and drag it up or down the list; a blue line shows where it lands.
@@ -52,6 +54,8 @@ Preferences (focus hours, buffer, breaks, lunch) are in Settings → Scheduling.
 
 ## Projects
 
+- **Pin, archive, notes and budgets** (Edit project): pinned projects come first everywhere; archiving hides a finished project but keeps its to dos, blocks and timesheet (Show archived at the bottom of the list); notes (addresses, contacts, links) show at the top of the project's list; a weekly budget in hours shows a progress bar of time tracked this week, plus planned time.
+- **Phone:** names sit under every project bubble (turn off in the Projects list). **Computer:** drag the edge of the to do panel to make it wider or narrower (double-click the edge to reset); fold the project pane with its Projects heading; each project remembers where its list was scrolled.
 - **Smart tagging:** write a project's name anywhere in a to do or quick block ("Call Focus Lighting about fixtures") and it joins that project; the words stay in the title. Type `#Project Name` (quotes optional) to connect to a project; in block and timer names suggestions appear as you type, and if nothing matches, whatever follows the `#` becomes a new project. In to dos, use quotes (`#"New Name"`) to make a new project, since a bare `#word` is otherwise a tag. A plain `#word` that matches a project's name means that project; otherwise it's a tag.
 - **Settings → Projects** lists every project: rename it in place (every to do and block follows), and add short names under *Also matches* (e.g. `FL, focus`) so `#FL` means Focus Lighting.
 - Wherever you pick a project (a to do's details, a block, the timer's "What was that for?"), **+ New** lets you type a name and makes the project on the spot. Typing a project's name in the title there picks it too.
@@ -93,6 +97,9 @@ Notes: GitHub can run scheduled jobs a few minutes late when it's busy, so treat
 
 ## Calendar views
 
+- **Drag a project onto the calendar** (computer) to block out an hour for it; Edit in the toast to change it.
+- **Overlaps** are striped with a ⚠; open the block and tap **Push the later one** to move things along until nothing overlaps (anchored blocks stay put).
+- **Month** shows a thin bar under each day split by project colour.
 - **Phone:** the **D / W / M** switch at the top left of the calendar shows a day, the whole week, or the month. Swipe sideways to move by a day, a week or a month.
 - **Desktop / iPad:** next to 1 / 3 / 5 days there are **Week** and **Month**; the arrows move by the same amount.
 - **Move things by dragging.** In Day and Week, hold a block (or just drag it with a mouse) to move it to another time or another day; drag its bottom edge to change how long it lasts; moving and stretching snap to half hours. In Month, drag an event's dot or title onto another day. Every move has an Undo.
@@ -108,6 +115,11 @@ Notes: GitHub can run scheduled jobs a few minutes late when it's busy, so treat
 
 ## More features
 
+- **Week review** (`r`, or Review in Week view): time by project against budgets, what you didn't get to, and one tap to move it all to next week.
+- **Sync status:** Settings → Sync shows when this device last synced; if it's been more than a day, a banner says so with Sync now.
+- **Timer notification:** while a timer runs, a notification with Pause/Resume and Stop (Settings → Timer; where the device allows notifications).
+- **Look:** Settings → accent colour and Spacing (Roomy or Compact). A short welcome guide shows on a new device until its steps are done.
+- **More keys:** `[` `]` previous/next project, `a` All, `i` Inbox, `Shift+1–9` pinned projects, `r` week review, `\` fold the project pane.
 - **Steps**: break a to do into a checklist from its details; the row shows progress like "2/5".
 - **Tags**: type `#deep` or `#calls` in a to do. Filter by tag above the list, or search `#deep`.
 - **Search and commands**: the magnifier in the project bar, `/` or `⌘K`/`Ctrl+K`. Find any to do, block or project, run actions, or add a to do or block straight from what you typed.

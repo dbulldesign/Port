@@ -1,4 +1,4 @@
-const VERSION='1.14.2';
+const VERSION='1.15.0';
 const CACHE='port-'+VERSION;
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/apple-touch-icon.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()))});
@@ -16,5 +16,8 @@ self.addEventListener('fetch',e=>{
 /* reminders sent while Port is closed */
 self.addEventListener('push',e=>{let d={};try{d=e.data?e.data.json():{}}catch(x){d={title:'Port',body:e.data?e.data.text():''}}
   e.waitUntil(self.registration.showNotification(d.title||'Port',{body:d.body||'',tag:d.tag||undefined,renotify:!!d.tag,icon:'icons/icon-192.png',badge:'icons/icon-192.png',data:{url:d.url||'./'}}))});
-self.addEventListener('notificationclick',e=>{e.notification.close();const url=new URL((e.notification.data&&e.notification.data.url)||'./',self.registration.scope).href;
+self.addEventListener('notificationclick',e=>{const timer=e.notification.data&&e.notification.data.timer;
+  /* Pause / Resume / Stop on the running-timer notification: tell an open Port, or open one to do it */
+  if(timer&&e.action&&e.action.startsWith('timer-')){e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(cs=>{const c=cs.find(x=>x.url.startsWith(self.registration.scope));if(c){c.postMessage({type:'timer',action:e.action});return}return self.clients.openWindow(new URL('./?timer='+e.action,self.registration.scope).href)}));return}
+  if(!timer)e.notification.close();const url=new URL((e.notification.data&&e.notification.data.url)||'./',self.registration.scope).href;
   e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(cs=>{const c=cs.find(x=>x.url.startsWith(self.registration.scope));return c?c.focus():self.clients.openWindow(url)}))});

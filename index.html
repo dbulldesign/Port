@@ -414,7 +414,7 @@ svg{display:block}
 .stat b{display:block;font-size:22px;font-weight:700;letter-spacing:-.5px}
 .stat span{font-size:12px;color:var(--label2)}
 @media (min-width:900px), (hover:hover) and (pointer:fine) and (min-width:600px){
-  .screen.week .panel{width:min(64%,980px)}
+  .screen.week .panel{width:var(--panelweek,min(64%,980px))}
   .screen.week .kcol{width:230px}
   .screen.week .datehead{gap:8px;padding:0 14px}
   .screen.week .datehead .dn{font-size:30px;letter-spacing:-1px;white-space:nowrap}
@@ -538,7 +538,7 @@ svg{display:block}
   .panel .task .name{overflow-wrap:anywhere;min-width:0}
 }
 /* below a full-size window the week keeps the normal panel width so the calendar isn't squeezed */
-@media (max-width:1099px){.screen.week .panel{width:var(--panel)}}
+@media (max-width:1099px){.screen.week .panel{width:var(--panelweek,var(--panel))}}
 /* narrower computer windows: the project list sits in its own scrolling pane under the to dos */
 .panel .sidebar.ppane{width:auto;flex:0 1 auto;max-height:42%;min-height:150px;border-right:0;border-top:.5px solid var(--sep);background:var(--side)}
 .panel .sidebar.ppane .sfind{margin:10px 12px 6px}
@@ -887,6 +887,94 @@ code{font:12px ui-monospace,Menlo,monospace;background:var(--fill2);padding:1px 
   .datehead .dn.range{font-size:40px;letter-spacing:-1.4px}
   .datehead .wd:empty{display:none}
 }
+/* ---- v1.15: projects ---- */
+.panel{position:relative}
+.pgrip{position:absolute;top:0;bottom:0;right:0;width:8px;cursor:col-resize;z-index:20;touch-action:none}
+.pgrip::after{content:"";position:absolute;top:50%;left:5px;width:2px;height:44px;margin-top:-22px;border-radius:2px;background:var(--label4);opacity:0;transition:opacity .2s}
+.pgrip:hover::after,.pgrip.on::after{opacity:1}
+body.resizing,body.resizing *{cursor:col-resize!important;user-select:none!important}
+.budget{margin:2px 22px 10px;padding:9px 12px;border-radius:12px;background:var(--fill2)}
+.budget .bt{display:flex;justify-content:space-between;font-size:13px;color:var(--label2);margin-bottom:6px}
+.budget .bt b{color:var(--label);font-weight:600}
+.budget .bbar{position:relative;height:6px;border-radius:3px;background:var(--fill);overflow:hidden}
+.budget .bbar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--c);transition:width .5s var(--ease)}
+.budget .bbar i.plan{background:color-mix(in srgb,var(--c) 35%,transparent)}
+.pnotes{margin:2px 22px 10px;border-radius:12px;background:var(--fill2);overflow:hidden}
+.pnotes .pnh{display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;font-size:13px;font-weight:600;color:var(--label2);text-align:left;min-width:0}
+.pnotes .pnh svg{width:14px;height:14px;flex:none}
+.pnotes .pnh em{font-style:normal;font-weight:400;color:var(--label3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pnotes .pnb{padding:0 12px 6px;font-size:14px;line-height:1.45;color:var(--label);overflow-wrap:anywhere;user-select:text;-webkit-user-select:text}
+.pnotes .pnb a{color:var(--tint)}
+.pnotes .pne{padding:2px 12px 10px;font-size:13px;color:var(--tint)}
+.plabel.pbtn{width:100%;cursor:pointer;text-align:left}
+.fnote.pbtn{display:block;width:100%;text-align:left;color:var(--tint)}
+.proj.arch,.prow.arch{opacity:.6}
+.archtag{font-size:11px;font-weight:600;color:var(--label2);background:var(--fill2);padding:2px 7px;border-radius:6px;align-self:center}
+.prow .pin svg{width:12px;height:12px;margin-right:5px;color:var(--orange,#FF9F0A);vertical-align:-1px}
+.pphead{display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px 2px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--label3);text-align:left;min-width:0}
+.pphead svg{width:13px;height:13px;transform:rotate(90deg);transition:transform .25s var(--ease);flex:none}
+.pphead em{font-style:normal;text-transform:none;letter-spacing:0;font-size:13px;color:var(--label);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.panel .sidebar.ppane.min{min-height:0}
+.ppane.min .pphead svg{transform:none}
+.ppane.min .sfind,.ppane.min .plist{display:none}
+.ppane.min .pphead{padding-bottom:6px}
+.todo-card.xfade{animation:fadein .22s ease}
+/* phone: a name under every project bubble */
+.projbar.compact.names{align-items:flex-start}
+.projbar.compact.names .proj.bub:not(.on){flex-direction:column;gap:3px;padding:0 2px;width:52px;align-items:center}
+.projbar.compact.names .proj.bub:not(.on) .nm{max-width:52px;opacity:1;font-size:10.5px;font-weight:500;letter-spacing:0;text-overflow:ellipsis;color:var(--label2)}
+.projbar.compact.names .proj.bub.on,.projbar.compact.names .proj.tool,.projbar.compact.names .proj.add,.projbar.compact.names .proj.gear{margin-top:0}
+/* ---- v1.15: to dos ---- */
+.sortrow{display:flex;align-items:center;gap:10px;padding:0 22px 8px;font-size:13px;color:var(--label3)}
+.sortrow .seg.mini button{font-size:12.5px;padding:4px 9px}
+.pgroup{display:flex;align-items:center;gap:8px;width:100%;padding:12px 22px 4px;font-size:13px;font-weight:600;color:var(--label2);text-align:left;min-width:0}
+.pgroup span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pgroup em{font-style:normal;color:var(--label3);font-weight:500}
+.pgroup svg{width:12px;height:12px;margin-left:auto;color:var(--label4);flex:none}
+.pgroup:hover{color:var(--label)}
+.divider.btn svg{width:15px;height:15px}
+.welcome{margin:2px 14px 12px;padding:12px 12px 6px;border-radius:16px;background:color-mix(in srgb,var(--tint) 14%,var(--card2,var(--fill2)))}
+.welcome .wh{display:flex;align-items:center;justify-content:space-between;padding:0 4px 6px}
+.welcome .wh b{font-size:16px}
+.welcome .x{font-size:20px;color:var(--label3);width:28px;height:28px}
+.wstep{display:flex;align-items:center;gap:12px;width:100%;padding:8px 4px;text-align:left;border-radius:10px}
+button.wstep:hover{background:var(--fill2)}
+.wstep .wn{width:26px;height:26px;border-radius:50%;background:var(--tint);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:700;flex:none}
+.wstep.ok .wn{background:var(--green)}.wstep .wn svg{width:14px;height:14px}
+.wstep.ok div div{text-decoration:line-through;color:var(--label3)}
+.wstep small{display:block;font-size:12.5px;color:var(--label2)}
+.empty b{display:block;color:var(--label);font-weight:600;margin-bottom:2px}
+/* compact spacing */
+.dense .task .inner{padding-top:4px;padding-bottom:4px;min-height:38px;gap:11px}
+.dense .task .name{font-size:15.5px}
+.dense .task.compact .inner{padding-top:4px;padding-bottom:4px;min-height:34px}
+.dense .check{width:20px;height:20px}
+.dense .tbtn{transform:scale(.88)}
+.dense .newrow{padding-top:6px;padding-bottom:6px}
+.dense .divider{padding-top:10px;padding-bottom:4px}
+.dense .plist .proj{padding-top:4px;padding-bottom:4px}
+/* ---- v1.15: calendar ---- */
+.block.clash{background-image:repeating-linear-gradient(135deg,transparent 0 7px,color-mix(in srgb,#FF9F0A 16%,transparent) 7px 9px)}
+.clashcard{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:12px 14px;border-radius:14px;background:color-mix(in srgb,#FF9F0A 16%,var(--card))}
+.clashcard div{flex:1;min-width:0}.clashcard b{display:block;font-size:15px}.clashcard small{font-size:13px;color:var(--label2)}
+.pghost{position:fixed;left:0;top:0;z-index:200;pointer-events:none;display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;background:var(--popup,#2c2c2e);color:var(--label);font-size:14px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.pghost .pic{width:24px;height:24px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center}.pghost .pic svg{width:13px;height:13px}
+.proj.dragging{opacity:.5}
+.mday{position:relative}
+.mbar{position:absolute;left:5px;right:5px;bottom:3px;height:3px;border-radius:2px;display:flex;gap:1px;overflow:hidden;opacity:.9}
+.mbar i{display:block;height:100%;min-width:2px}
+.mday.out .mbar{opacity:.4}
+/* ---- v1.15: sync, review, accent ---- */
+.banner.stale{background:color-mix(in srgb,#FF9F0A 16%,var(--card2,var(--fill2)))}
+.banner.stale .bic{background:#FF9F0A}
+.banner.stale .btn{flex:none;margin-right:6px}
+.rrow.tbp .rt{flex:1}
+.tbar{height:5px;border-radius:3px;background:var(--fill);margin-top:6px;overflow:hidden}.tbar i{display:block;height:100%;border-radius:3px}
+.rrow b small{font-weight:500;color:var(--label3)}
+.accents{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.acc{width:30px;height:30px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15);transition:transform .15s}
+.acc.on{box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--label)}
+.acc:hover{transform:scale(1.08)}
 </style>
 </head>
 <body>
@@ -1038,6 +1126,7 @@ function guessIcon(name){
   return null}
 const ico=(k,sw=1.9)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${PI[k]||PI.tag}</svg>`;
 const I={
+  pin:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 2.8a1 1 0 0 1 1.4 0l4.3 4.3a1 1 0 0 1 0 1.4l-1.7 1.7a1 1 0 0 1-1 .25l-3.2 3.2.4 3.3a1 1 0 0 1-.3.8l-1 1a1 1 0 0 1-1.4 0l-3-3-4.8 4.8-1.4-1.4 4.8-4.8-3-3a1 1 0 0 1 0-1.4l1-1a1 1 0 0 1 .8-.3l3.3.4 3.2-3.2a1 1 0 0 1 .25-1z"/></svg>',
   today:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><rect x="7" y="12.5" width="5" height="4" rx="1.2" fill="currentColor" stroke="none"/></svg>',
   tasks:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="7" r="2.3"/><circle cx="6.5" cy="17" r="2.3"/><path d="M12 7h8M12 17h8"/></svg>',
   focus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.3" fill="currentColor" stroke="none"/></svg>',
@@ -1145,7 +1234,7 @@ async function runSync(){
     if(sync.dirty){const legacy=sync.file===LEGACY_FILE;const body=legacy?{description:'Port planner sync (private)',files:{[LEGACY_FILE]:{filename:GIST_FILE,content:JSON.stringify(exportState())}}}:{files:{[GIST_FILE]:{content:JSON.stringify(exportState())}}};
       const w=await gh('/gists/'+sync.gistId,{method:'PATCH',body:JSON.stringify(body)});
       if(w.status===401)throw new Error('GitHub rejected the token. Set up sync again.');if(!w.ok)throw new Error('Could not save to GitHub ('+w.status+').');sync.etag=w.headers.get('etag');sync.dirty=false;sync.file=GIST_FILE}
-    sync.lastAt=Date.now();sync.error='';dbStatus='synced';sync.fail=0;
+    sync.lastAt=Date.now();noteSynced();sync.error='';dbStatus='synced';sync.fail=0;
   }catch(e){const net=e instanceof TypeError||navigator.onLine===false;sync.error=net?'No connection':((e&&e.message)||'Sync failed');dbStatus=net?'offline':'error';sync.fail=(sync.fail||0)+1}
   sync.busy=false;renderStatus();
   /* no connection: try again calmly (5s, 10s, 20s … up to a minute); otherwise push pending changes soon */
@@ -1158,9 +1247,10 @@ function renderStatus(){$$('.sync-status').forEach(el=>el.innerHTML=syncStatusTe
 function ago(t){if(!t)return'';const s=Math.round((Date.now()-t)/1000);return s<5?'just now':s<60?s+'s ago':s<3600?Math.round(s/60)+' min ago':Math.round(s/3600)+' h ago'}
 function syncStatusText(){
   if(!secrets.token||!sync.gistId)return'Not set up. This device only.';
-  if(dbStatus==='syncing')return'Syncing…';if(dbStatus==='offline')return'Offline. Changes will sync when you’re back online.';
-  if(dbStatus==='error')return'Sync problem: '+esc(sync.error);
-  return`Connected as @${esc(sync.login||'GitHub')}${sync.lastAt?', synced '+ago(sync.lastAt):''}`;
+  const last=sync.lastAt?' Last synced '+agoLong(sync.lastAt)+'.':'';
+  if(dbStatus==='syncing')return'Syncing…';if(dbStatus==='offline')return'Offline. Changes will sync when you’re back online.'+last;
+  if(dbStatus==='error')return'Sync problem: '+esc(sync.error)+'.'+last;
+  return`Connected as @${esc(sync.login||'GitHub')}${sync.lastAt?', last synced '+agoLong(sync.lastAt):''}`;
 }
 const isIOS=()=>/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 /* a setup link (…#setup=xyz) or a bare token, as typed or pasted */
@@ -1408,7 +1498,7 @@ function scheduleRender(){
 function applyTheme(){const s=state.settings;const t=s.theme;const root=document.documentElement;if(t==='light'||t==='dark')root.setAttribute('data-theme',t);else root.removeAttribute('data-theme');
   const a=s.appTheme||'dark';const light=a==='light'||(a==='auto'&&window.matchMedia('(prefers-color-scheme: light)').matches);root.setAttribute('data-app',light?'light':'dark');
   const m=document.querySelector('meta[name=theme-color]');if(m)m.content=light?'#F2F2F7':'#000000';
-  root.style.setProperty('--ts',String(s.textSize||1));root.classList.toggle('bigtext',(s.textSize||1)>1)}
+  root.style.setProperty('--ts',String(s.textSize||1));root.classList.toggle('bigtext',(s.textSize||1)>1);applyDensity();applyAccent()}
 try{window.matchMedia('(prefers-color-scheme: light)').addEventListener('change',()=>applyTheme())}catch(e){}
 function renderApp(){
   applyTheme();
@@ -1419,11 +1509,11 @@ function renderApp(){
   app.innerHTML=isWide()?wideShell():mobileShell();
   const tl2=$('.timeline');
   if(tl2){if(ui.calView==='month'){tl2.scrollTop=0}else if(sc&&ui.scrolledToNow&&!ui.viewChanged){tl2.scrollTop=sc.t;tl2.scrollLeft=sc.l}else scrollToNow()}ui.viewChanged=false;
-  const td2=$('.todo-card');if(td2&&tds)td2.scrollTop=tds;
+  const td2=$('.todo-card');if(td2&&ui.restoreScroll!=null){td2.scrollTop=ui.restoreScroll;ui.restoreScroll=null}else if(td2&&tds)td2.scrollTop=tds;
   const pl2=$('.plist');if(pl2){if(pls!=null)pl2.scrollTop=pls;filterSidebar();const on=$('.proj.on',pl2);if(on&&ui.listAnim){const r=on.getBoundingClientRect(),pr=pl2.getBoundingClientRect();if(r.top<pr.top||r.bottom>pr.bottom)on.scrollIntoView({block:'nearest',behavior:'smooth'})}}
   const pb2=$('.projbar');if(pb2){if(pbs!=null)pb2.scrollLeft=pbs;const on=$('.proj.on',pb2);if(on&&ui.listAnim){const r=on.getBoundingClientRect(),pr=pb2.getBoundingClientRect();if(r.left<pr.left+10||r.right>pr.right-10)pb2.scrollTo({left:on.offsetLeft-20,behavior:'smooth'})}}
   ui.listAnim=false;ui.dayAnim='';ui.freshBlock=null;ui.freshBlocks=[];if(typeof drawSelBar==='function')drawSelBar();document.body.classList.toggle('selecting',!!ui.selecting);
-  afterRender();
+  afterRender();syncTimerNote();
   if(ui.adding){const i=$('.newinput');if(i){try{i.focus({preventScroll:true})}catch(e){}}}
   tickFocus();
 }
@@ -1442,7 +1532,7 @@ function mobileShell(){
 const hasSidebar=()=>window.matchMedia('(min-width:1100px)').matches;
 function wideShell(){
   const side=hasSidebar();
-  return`<div class="screen ${ui.mode==='week'?'week':''} ${side?'side':''}">${side?projSidebar():''}<aside class="panel">${panelTitle()}<div class="desk"><div class="todo-card" style="--c:${projColor()}">${todoHtml()}</div></div>${side?'':projSidebar(true)}</aside>
+  return`<div class="screen ${ui.mode==='week'?'week':''} ${side?'side':''}">${side?projSidebar():''}<aside class="panel"><div class="pgrip" title="Drag to resize · double-click to reset" aria-hidden="true"></div>${panelTitle()}<div class="desk"><div class="todo-card" style="--c:${projColor()}">${todoHtml()}</div></div>${side?'':projSidebar(true)}</aside>
     <section class="mainwrap"><div class="cal"><div class="datehead">${dateheadWide()}</div><div class="calpills widepills">${schedPill()}${focusPill()}</div><div class="timeline">${timelineHtml()}</div></div></section>${ui.focus?focusHtml():''}</div>`;
 }
 function dateheadMobile(){
@@ -1510,23 +1600,35 @@ function dayColHtml(date){
 }
 
 /* ---- to do card ---- */
-function tasksOfCurrent(){const pid=ui.pid;return tasksArr().filter(t=>pid==='all'||(pid==='inbox'?!t.projectId:t.projectId===pid))}
+function tasksOfCurrent(withSnoozed){const pid=ui.pid;return tasksArr().filter(t=>(withSnoozed||!isSnoozed(t))&&(pid==='all'||(pid==='inbox'?!t.projectId:t.projectId===pid)))}
+/* a snoozed to do stays out of sight until its day comes round */
+function isSnoozed(t){return!!(t&&t.snooze&&!t.done&&t.snooze>todayYmd())}
 /* open to dos in a section of the project list; "all" counts every project */
-const pidCount=pid=>tasksArr().filter(t=>!t.done&&(pid==='all'||(pid==='inbox'?!t.projectId:t.projectId===pid))).length;
+const pidCount=pid=>tasksArr().filter(t=>!t.done&&!isSnoozed(t)&&(pid==='all'||(pid==='inbox'?!t.projectId:t.projectId===pid))).length;
 const ALLC='#8E8E93';
 function listModeHtml(){
   const tags=allTags();if(ui.tag&&!tags.includes(ui.tag))ui.tag=null;
   const all=tasksOfCurrent().filter(t=>!ui.tag||tagsOf(t).includes(ui.tag));const p=currentProject();const every=ui.pid==='all';
+  const snoozed=tasksOfCurrent(true).filter(t=>isSnoozed(t)).sort((a,b)=>a.snooze.localeCompare(b.snooze));
   const todo=sortTasks(all.filter(t=>!t.done&&!t.blockId));const sched=sortTasks(all.filter(t=>!t.done&&t.blockId)).sort((a,b)=>{const A=state.blocks[a.blockId],B=state.blocks[b.blockId];return(A&&B)?(A.date+pad(A.start/60)).localeCompare(B.date+pad(B.start/60)):0});
   const done=all.filter(t=>t.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
-  const anim=ui.listAnim?'enter':'';let i=0;
-  const rows=l=>l.map(t=>taskRow(t,{i:i++,showBlock:true,timer:true,proj:every})).join('');
+  const anim=ui.listAnim?'enter':'';let i=0;const grouping=every?ui.allSort:'list';
+  const rows=(l,o={})=>l.map(t=>taskRow(t,{i:i++,showBlock:true,timer:true,proj:every&&grouping!=='project',...o})).join('');
+  /* All: group under each project, or order by day */
+  let main;
+  if(grouping==='project'){const groups=new Map();todo.forEach(t=>{const k=t.projectId&&state.projects[t.projectId]?t.projectId:'';if(!groups.has(k))groups.set(k,[]);groups.get(k).push(t)});
+    const order=['',...navProjects().map(x=>x.id),...archivedProjects().map(x=>x.id)].filter(k=>groups.has(k));
+    main=order.map(k=>{const pp=state.projects[k];const c=pp?pp.color:'#0A84FF';return`<button class="pgroup" data-act="proj:select" data-pid="${k||'inbox'}" style="--c:${c}"><i class="pdot" style="background:${c}"></i><span>${esc(pp?pp.name:'Inbox')}</span><em>${groups.get(k).length}</em>${I.chevR}</button><ul class="list draggable ${anim}">${rows(groups.get(k))}</ul>`}).join('')}
+  else if(grouping==='due'){const by=l=>[...l].sort((a,b)=>(taskDay(a)||'9999').localeCompare(taskDay(b)||'9999'));main=`<ul class="list draggable ${anim}">${rows(by(todo))}</ul>`}
+  else main=`<ul class="list draggable ${anim}">${rows(todo)}</ul>`;
   return`<div class="todo-h">${modeSeg()}${liveChip()}${dayRing(todayYmd())}<button class="more press" data-act="list:menu" aria-label="More">···</button></div>
-    ${syncBanner()}${ritualBanner()}${tags.length?`<div class="tagrow"><button class="objchip ${ui.tag?'':'on'}" data-act="tag:filter" data-v="">All</button>${tags.map(g=>`<button class="objchip ${ui.tag===g?'on':''}" data-act="tag:filter" data-v="${esc(g)}">#${esc(g)}</button>`).join('')}</div>`:''}
-    <ul class="list draggable ${anim}">${rows(todo)}</ul>
-    ${!todo.length&&!sched.length&&!ui.adding?`<div class="empty">${p?`Nothing in ${esc(p.name)} yet.`:every?'No to dos anywhere yet.':'Your inbox is clear.'} Add a to do below, then hold it and carry it onto the calendar.</div>`:''}
+    ${welcomeCard()}${staleSyncBanner()}${syncBanner()}${ritualBanner()}${budgetBar(p)}${notesCard(p)}${tags.length?`<div class="tagrow"><button class="objchip ${ui.tag?'':'on'}" data-act="tag:filter" data-v="">All</button>${tags.map(g=>`<button class="objchip ${ui.tag===g?'on':''}" data-act="tag:filter" data-v="${esc(g)}">#${esc(g)}</button>`).join('')}</div>`:''}
+    ${every?`<div class="sortrow"><span>Show</span><div class="seg mini">${[['project','By project'],['due','By day'],['list','One list']].map(([k,l])=>`<button class="${grouping===k?'on':''}" data-act="allsort" data-v="${k}">${l}</button>`).join('')}</div></div>`:''}
+    ${main}
+    ${!todo.length&&!sched.length&&!ui.adding?`<div class="empty">${emptyText(p,every,snoozed.length,done.length)}</div>`:''}
     ${sched.length?`<div class="divider">Scheduled</div><ul class="list draggable ${anim}">${rows(sched)}</ul>`:''}
     ${ui.adding&&ui.adding.kind==='project'?newRowInput():`<button class="newrow ${todo.length||sched.length?'':'dim'}" data-act="todo:new"><span class="plus">${I.plus}</span>New To Do</button>`}
+    ${snoozed.length?`<button class="divider btn" data-act="snoozed:toggle">${ico('moon',2)}Snoozed ${snoozed.length}</button>${ui.showSnoozed?`<ul class="list">${snoozed.map(t=>taskRow(t,{i:i++,proj:every,snoozed:true})).join('')}</ul>`:''}`:''}
     ${done.length?`<button class="divider btn" data-act="done:toggle">${I.checkBig.replace('<svg','<svg style="width:15px;height:15px"')}Completed ${done.length}</button>${ui.showDone?`<ul class="list">${done.slice(0,50).map(t=>taskRow(t,{i:i++,proj:every})).join('')}</ul>`:''}`:''}`;
 }
 function newRowInput(){
@@ -1549,13 +1651,13 @@ function taskRow(t,o={}){
     <button class="tt" data-act="task:open" data-id="${t.id}"><div class="name">${esc(t.title)}</div>${right?`<div class="right">${right}</div>`:''}</button></div></li>`;
 }
 function projbar(){
-  const ps=Object.values(state.projects).sort((a,b)=>a.name.localeCompare(b.name));
+  const ps=navProjects();
   const cnt=pidCount;
   const item=(pid,name,icon,color)=>`<button class="proj ${ui.pid===pid?'on':''}" data-act="proj:select" data-pid="${pid}" ${pid==='all'?'':`data-project="${pid==='inbox'?'':pid}"`} style="--c:${color}"><span class="pic">${ico(icon,2.2)}</span><span>${esc(name)}</span><span class="cnt">${cnt(pid)||''}</span></button>`;
   if(!isWide()){
     /* phone: icon bubbles, the chosen one shows its name; a grid button opens the full list */
     const bub=(pid,name,icon,color)=>{const n=cnt(pid);return`<button class="proj bub ${ui.pid===pid?'on':''}" title="${esc(name)}" data-act="proj:select" data-pid="${pid}" ${pid==='all'?'':`data-project="${pid==='inbox'?'':pid}"`} style="--c:${color}" aria-label="${esc(name)}${n?', '+n+' open':''}"><span class="pic">${ico(icon,2.2)}${n&&ui.pid!==pid?`<b class="badge">${n>99?'99+':n}</b>`:''}</span><span class="nm">${esc(name)}</span>${n&&ui.pid===pid?`<span class="cnt">${n}</span>`:''}</button>`};
-    return`<div class="projbar compact"><button class="proj tool press" data-act="projects:open" aria-label="All projects"><span class="pic">${ico('grid',2.2)}</span></button>${bub('all','All','stack',ALLC)}${bub('inbox','Inbox','inbox','#0A84FF')}${ps.map(p=>bub(p.id,p.name,p.icon||'tag',p.color)).join('')}
+    return`<div class="projbar compact ${bubNames()?'names':''}"><button class="proj tool press" data-act="projects:open" aria-label="All projects"><span class="pic">${ico('grid',2.2)}</span></button>${bub('all','All','stack',ALLC)}${bub('inbox','Inbox','inbox','#0A84FF')}${ps.map(p=>bub(p.id,p.name,p.icon||'tag',p.color)).join('')}
       <button class="proj add press" data-act="project:new" aria-label="New project"><span class="pic">${I.plus}</span></button>
       <button class="proj gear press" data-act="cmd:open" aria-label="Search" style="margin-left:auto"><span class="pic">${ico('search',2.2)}</span></button>
       <button class="proj gear press" data-act="settings:open" aria-label="Settings" style="margin-left:0"><span class="pic">${I.gear}${secrets.token&&sync.gistId?`<span class="syncdot ${dbStatus} gdot"></span>`:''}</span></button></div>`}
@@ -1640,7 +1742,7 @@ function blockSheet(id){return()=>{
   return`${snav('',{act:'sheet:close',label:'Close'},{act:'block:edit',id,label:'Edit'})}
   <div class="shead" style="${cvars(col)}"><h2><span class="bic">${ico(blockIcon(b),2.1)}</span>${esc(b.title)}</h2><div class="sub">${esc(fmtDay(b.date))}, ${fmtTime(b.start)} – ${fmtTime(blockEnd(b))} (${fmtDur(b.duration)})${b.routineId?', repeats':''}${p?`, ${esc(p.name)}`:''}</div>${pvaLine(tasks)}</div>
   <div class="sbody" style="${cvars(col)}">
-    ${(b.fromTimer||b.liveTask)&&!b.live?`<div class="card" style="margin-bottom:14px"><button class="frow" data-act="block:edit" data-id="${id}" style="width:100%"><label style="min-width:0;flex:1">Timer<small style="display:block;font-size:13px;color:var(--label2)">Started ${fmtTimeShort(b.start)}, ended ${fmtTimeShort(blockEnd(b))} · ${fmtDur(b.duration)}</small></label><span class="val" style="flex:none;color:var(--tint)">Edit end</span>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>`:''}
+    ${clashCard(b)}${(b.fromTimer||b.liveTask)&&!b.live?`<div class="card" style="margin-bottom:14px"><button class="frow" data-act="block:edit" data-id="${id}" style="width:100%"><label style="min-width:0;flex:1">Timer<small style="display:block;font-size:13px;color:var(--label2)">Started ${fmtTimeShort(b.start)}, ended ${fmtTimeShort(blockEnd(b))} · ${fmtDur(b.duration)}</small></label><span class="val" style="flex:none;color:var(--tint)">Edit end</span>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>`:''}
     <div class="card" style="padding:8px 0 4px"><div class="todo-h" style="padding-left:20px"><span class="dotted"></span>Tasks</div><ul class="list">${tasks.map((t,i)=>taskRow(t,{i})).join('')||`<div class="empty" style="padding-top:6px">Nothing scheduled yet. Add a to do below${isWide()?', or drag one in':', or hold one in the list and carry it here'}.</div>`}</ul>
       ${ui.adding&&ui.adding.kind==='block'&&ui.adding.id===id?`<div class="newrow" style="padding-left:20px"><span class="plus">${I.plus}</span><input class="newinput" placeholder="New To Do" aria-label="New to do" autocomplete="off" enterkeyhint="done" data-act="new:text" autofocus></div>`:`<button class="newrow ${tasks.length?'':'dim'}" style="padding-left:20px" data-act="todo:newInBlock" data-id="${id}"><span class="plus">${I.plus}</span>New To Do</button>`}</div>
     <div class="btnrow">${b.live?`<button class="btn primary" data-act="live:stop" style="--c:#FF453A">Stop timer · <span class="trun tabular" data-start="${b.liveStart}">${fmtClock(liveElapsedSec(b))}</span></button><button class="btn" data-act="${b.paused?'live:resume':'live:pause'}">${b.paused?'Resume':'Pause'}</button>`:b.date===todayYmd()&&blockEnd(b)>nowMin()?`<button class="btn primary" data-act="live:startBlock" data-id="${id}">${I.play.replace('<svg','<svg style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:4px"')}Start timer</button>`:''}<button class="btn ${b.live||!(b.date===todayYmd()&&blockEnd(b)>nowMin())?'primary':''}" data-act="block:focus" data-id="${id}">Focus</button><button class="btn ${b.anchored?'anchored':''}" data-act="block:anchor" data-id="${id}" aria-pressed="${!!b.anchored}">${ico('anchor',2.2).replace('<svg','<svg style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:5px"')}${b.anchored?'Anchored':'Anchor in'}</button>${left?`<button class="btn" data-act="focus:moveLeft" data-id="${id}">Move what’s left</button>`:''}</div>
@@ -1688,17 +1790,6 @@ function taskSheet(id){return()=>{
     <div class="card" style="margin-top:14px"><button type="button" class="frow" data-act="task:delete" data-id="${id}" style="width:100%;justify-content:center;color:var(--red);font-weight:500">Delete to do</button></div>
   </form></div>`;
 }}
-function projectSheet(id){const fresh=pickProjectColor(),freshIcon=pickProjectIcon();return()=>{
-  const p=id?state.projects[id]:null;
-  const color=p?p.color:fresh;const icon=p?(p.icon||'tag'):freshIcon;
-  return`${snav(p?'Edit Project':'New Project',{act:'sheet:close',label:'Cancel'},{act:'noop',label:p?'Save':'Add',form:'projForm'})}
-  <div class="sbody"><form id="projForm" data-act="project:save" data-id="${id||''}" data-fresh-icon="${freshIcon}">
-    <div class="card"><div class="frow big"><input name="name" value="${p?esc(p.name):''}" placeholder="Project name" required ${p?'':'autofocus'} autocomplete="off" aria-label="Name"></div></div>
-    <div class="fnote" style="padding-top:14px">Colour</div><div class="card" style="margin-top:6px"><div class="swatches">${PALETTE.map(c=>`<button type="button" class="swatch ${color===c?'on':''}" style="background:${c};${cvars(c)}" data-act="chip:set" data-name="color" data-value="${c}" aria-label="Colour"></button>`).join('')}</div><input type="hidden" name="color" value="${color}"></div>
-    <div class="fnote" style="padding-top:14px">Icon</div><div class="card" style="margin-top:6px">${iconGrid(icon,color,'icon',false)}</div>
-    ${p?`<div class="card" style="margin-top:14px"><button type="button" class="frow" data-act="project:delete" data-id="${p.id}" style="width:100%;justify-content:center;color:var(--red);font-weight:500">Delete project</button></div>`:''}
-  </form></div>`;
-}}
 let pickerCb=null;
 function pickerSheet(opts){return()=>{
   const t=todayYmd();let html='';
@@ -1726,6 +1817,8 @@ function settingsSheet(){return()=>{
       <div class="frow"><label>Week starts</label><select data-act="setting" data-key="weekStart"><option value="1" ${(s.weekStart==null?1:s.weekStart)===1?'selected':''}>Monday</option><option value="0" ${s.weekStart===0?'selected':''}>Sunday</option></select></div>
       <div class="frow"><label>Appearance</label><select data-act="setting" data-key="appTheme" data-str="1">${[['dark','Dark'],['light','Light'],['auto','Match device']].map(([k,l])=>`<option value="${k}" ${(s.appTheme||'dark')===k?'selected':''}>${l}</option>`).join('')}</select></div>
       <div class="frow"><label>Text size</label><select data-act="setting" data-key="textSize" data-str="1">${[['1','Default'],['1.12','Large'],['1.25','Larger']].map(([k,l])=>`<option value="${k}" ${String(s.textSize||1)===k?'selected':''}>${l}</option>`).join('')}</select></div>
+      ${accentRow()}
+      <div class="frow"><label>Spacing</label><select data-act="setting" data-key="density" data-str="1">${[['comfortable','Roomy'],['compact','Compact']].map(([k,l])=>`<option value="${k}" ${(s.density||'comfortable')===k?'selected':''}>${l}</option>`).join('')}</select></div>
       <div class="frow"><label>Calendar</label><select data-act="setting" data-key="theme">${[['auto','Match device'],['light','Light'],['dark','Dark']].map(([k,l])=>`<option value="${k}" ${s.theme===k?'selected':''}>${l}</option>`).join('')}</select></div></div>
     <div class="fnote" style="padding-top:14px" id="schedPrefs">Scheduling</div><div class="card" style="margin-top:6px">
       <div class="frow"><label>Focus hours</label><select data-act="setting" data-key="focusStart">${[300,360,420,480,540,600,660,720,780,840].map(m=>`<option value="${m}" ${P().focusS===m?'selected':''}>${fmtTimeShort(m)}</option>`).join('')}</select><span style="color:var(--label2);font-size:15px">to</span><select data-act="setting" data-key="focusEnd" style="margin-left:0">${[540,600,660,720,780,840,900,960,1020,1080,1140,1200].map(m=>`<option value="${m}" ${P().focusE===m?'selected':''}>${fmtTimeShort(m)}</option>`).join('')}</select></div>
@@ -1738,6 +1831,7 @@ function settingsSheet(){return()=>{
       <div class="frow"><label>Focus</label><select data-act="setting" data-key="pomoWork">${[15,20,25,30,45,50,60,90].map(m=>`<option value="${m}" ${(s.pomoWork||25)===m?'selected':''}>${m} min</option>`).join('')}</select></div>
       <div class="frow"><label>Break</label><select data-act="setting" data-key="pomoBreak">${[3,5,10,15].map(m=>`<option value="${m}" ${(s.pomoBreak||5)===m?'selected':''}>${m} min</option>`).join('')}</select></div>
       <div class="frow"><label>Long break</label><select data-act="setting" data-key="pomoLong">${[10,15,20,30].map(m=>`<option value="${m}" ${(s.pomoLong||15)===m?'selected':''}>${m} min, every 4th</option>`).join('')}</select></div>
+      <div class="frow"><label style="min-width:0;flex:1">Timer notification<small style="display:block;font-size:13px;color:var(--label2)">${typeof Notification==='undefined'?'Not available in this browser':Notification.permission==='denied'?'Notifications are blocked for Port':'Pause and Stop from outside the app while it runs'}</small></label><button class="switch ${s.timerNote!==false&&typeof Notification!=='undefined'&&Notification.permission==='granted'?'on':''}" data-act="timernote:toggle" role="switch" aria-checked="${s.timerNote!==false}" aria-label="Timer notification"></button></div>
       <div class="frow"><label>Check in after</label><select data-act="setting" data-key="timerNudge">${[[60,'1 hour'],[120,'2 hours'],[180,'3 hours'],[0,'Never']].map(([m,l])=>`<option value="${m}" ${(s.timerNudge??120)===m?'selected':''}>${l}</option>`).join('')}</select></div>
       <div class="frow"><label style="min-width:0;flex:1">Work hours project<small style="display:block;font-size:13px;color:var(--label2)">Blank timers ${fmtTimeShort(s.workFrom??540)}–${fmtTimeShort(s.workTo??1020)} on weekdays</small></label><select data-act="setting" data-key="workProject" data-str="1"><option value="">None</option>${Object.values(state.projects).sort((a,b)=>a.name.localeCompare(b.name)).map(p=>`<option value="${p.id}" ${s.workProject===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
       <div class="frow"><label>Work hours</label><select data-act="setting" data-key="workFrom">${[360,420,480,510,540,600].map(m=>`<option value="${m}" ${(s.workFrom??540)===m?'selected':''}>${fmtTimeShort(m)}</option>`).join('')}</select><span style="color:var(--label2);font-size:15px">to</span><select data-act="setting" data-key="workTo" style="margin-left:0">${[900,960,1020,1050,1080,1140].map(m=>`<option value="${m}" ${(s.workTo??1020)===m?'selected':''}>${fmtTimeShort(m)}</option>`).join('')}</select></div>
@@ -1832,11 +1926,11 @@ function saveBlockForm(f){
   materialized.clear();syncRoutines();return newId;
 }
 function saveTaskForm(f){const d=readForm(f);const t=state.tasks[f.dataset.id];if(!t)return;put('tasks',t.id,{...t,title:(d.title||'').trim()||t.title,projectId:d.projectId||null,urgency:+d.urgency||0,due:d.due||null,dueTime:d.dueTime||null,notes:d.notes||''})}
-function saveProjectForm(f){const d=readForm(f);const id=f.dataset.id;const name=(d.name||'').trim();if(!name)return null;
-  if(id){put('projects',id,{...state.projects[id],name,color:d.color,icon:d.icon||'tag'});return id}
-  const nid=uid('p');put('projects',nid,{id:nid,name,color:d.color,icon:d.icon||'tag',createdAt:Date.now()});return nid}
 function setDate(s,dir){if(s===ui.date&&!dir)return;ui.dayAnim=dir==='next'?'anim-l':dir==='prev'?'anim-r':'';ui.date=s;ui.scrolledToNow=false;syncRoutines();renderApp()}
-function selectProject(pid){if(pid===ui.pid)return;const order=['all','inbox',...Object.values(state.projects).sort((a,b)=>a.name.localeCompare(b.name)).map(p=>p.id)];const dir=order.indexOf(pid)>order.indexOf(ui.pid);ui.pid=pid;ui.adding=null;ui.showDone=false;ui.listAnim=true;saveUi();haptic(5);renderApp();const l=$$('.todo-card .list');l.forEach(x=>x.classList.add(dir?'anim-l':'anim-r'))}
+function selectProject(pid){if(pid===ui.pid)return;const order=['all','inbox',...navProjects().map(p=>p.id),...archivedProjects().map(p=>p.id)];const dir=order.indexOf(pid)>order.indexOf(ui.pid);
+  const td=$('.todo-card');if(td)ui.scrollPos[ui.pid]=td.scrollTop;ui.restoreScroll=ui.scrollPos[pid]||0;
+  ui.pid=pid;ui.adding=null;ui.showDone=false;ui.listAnim=true;saveUi();haptic(5);renderApp();
+  if(isWide()){const c=$('.todo-card');if(c){c.classList.remove('xfade');void c.offsetWidth;c.classList.add('xfade')}}else{const l=$$('.todo-card .list');l.forEach(x=>x.classList.add(dir?'anim-l':'anim-r'))}}
 function addNewToDo(input){
   const text=input.value.trim();if(!text)return false;
   const a=ui.adding||{kind:'project'};const extra={};
@@ -2008,10 +2102,11 @@ function gestureMove(e){
   if(G.mode==='slotdrag'){moveProvisional(slotTime(p.el,e.clientY-p.offset));return}
   if(G.mode==='draw'){const a=p.start,b=slotTime(p.el,e.clientY);const s=Math.min(a,b),d=Math.max(MIN_BLOCK,Math.abs(b-a));moveProvisional(s,d);return}
   if(G.mode==='projedit')return;
+  if(G.mode==='pdrag'){movePDrag(e);return}
   const ad=Math.abs(dx),ady=Math.abs(dy);
   if(p.kind==='sheet'){if(dy>8&&ady>ad){G.mode='sheet';stopAnim('sheetAnim');p.sy=e.clientY}return}
   if(p.kind==='dh'){if(ad<8&&ady<8)return;if(ady>ad){G.mode='calresize';calAnimStop();p.el.classList.add('resizing');p.sy=e.clientY;p.h0=p.el.offsetHeight}else{G.mode='dayswipe';p.sx=e.clientX}clearTimeout(G.timer);return}
-  if(p.kind==='proj'){if(ad>6||ady>6){clearTimeout(G.timer);G.pending=null}return}
+  if(p.kind==='proj'){if(ad>6||ady>6){clearTimeout(G.timer);if(p.mouse&&isWide()&&state.projects[p.id])startPDrag(e);else G.pending=null}return}
   if(ad<7&&ady<7)return;
   if(p.kind==='mswipe'){clearTimeout(G.timer);if(ad>ady&&!isWide())G.mode='dayswipe';else G.pending=null;return}
   if(p.kind==='slot'){clearTimeout(G.timer);if(p.mouse&&ady>ad){G.mode='draw';createProvisional(p.el,Math.min(p.start,slotTime(p.el,e.clientY)),Math.max(MIN_BLOCK,Math.abs(slotTime(p.el,e.clientY)-p.start)));return}if(ad>ady&&!isWide()){G.mode='dayswipe';return}G.pending=null;return}
@@ -2021,7 +2116,7 @@ function gestureMove(e){
   clearTimeout(G.timer);G.pending=null;
 }
 /* visual updates run once per frame; the latest finger position wins */
-const VISUAL=new Set(['drag','swipe','sheet','calresize','dayswipe','slotdrag','draw','bresize']);
+const VISUAL=new Set(['pdrag','drag','swipe','sheet','calresize','dayswipe','slotdrag','draw','bresize']);
 document.addEventListener('pointerdown',()=>{G.vs=[]},{capture:true,passive:true});
 document.addEventListener('pointermove',e=>{
   const vs=G.vs||(G.vs=[]);vs.push({t:e.timeStamp,x:e.clientX,y:e.clientY});while(vs.length>2&&e.timeStamp-vs[0].t>100)vs.shift();
@@ -2056,6 +2151,7 @@ function endGesture(e,cancelled){
             done:()=>{g2.style.transform='';g2.style.opacity='';g2.style.willChange='';g2.style.transition='';G.dayAnim=null}})}})}
     else G.dayAnim=spring({from:dx,to:0,v0:vx,k:190,zeta:.9,update:x=>{g.style.transform=`translate3d(${x}px,0,0)`;g.style.opacity=String(Math.max(.35,1-Math.abs(x)/700))},done:()=>{g.style.transform='';g.style.opacity='';g.style.willChange='';G.dayAnim=null}})}
   else if(mode==='slotdrag'||mode==='draw'){G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);if(cancelled)cancelProvisional();else focusProvisional()}
+  else if(mode==='pdrag')endPDrag(cancelled);
   else if(mode==='projedit'){G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300)}
   else if(p.kind==='slot'&&!cancelled&&Math.abs(dx)<7&&Math.abs(dy)<7){G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);if(p.el.dataset.date===todayYmd())tapTimer();else{createProvisional(p.el,p.start);focusProvisional()}}
   G.pending=null;G.mode=null;
@@ -2345,7 +2441,7 @@ const weekStartOf=d=>{const x=fromYmd(d);const ws=state.settings.weekStart==null
 const weekKey=d=>'W'+weekStartOf(d);
 const taskDay=t=>{const b=t.blockId&&state.blocks[t.blockId];return b?b.date:(t.due||null)};
 const tasksForDay=date=>tasksArr().filter(t=>taskDay(t)===date);
-const backlogTasks=()=>tasksArr().filter(t=>!t.done&&!taskDay(t));
+const backlogTasks=()=>tasksArr().filter(t=>!t.done&&!taskDay(t)&&!isSnoozed(t));
 const plannedMinutes=date=>tasksForDay(date).filter(t=>!t.done).reduce((s,t)=>s+(t.est||0),0);
 const dayDoc=date=>state.days[date]||{id:date};
 const setDay=(date,patch)=>put('days',date,{...dayDoc(date),...patch});
@@ -2405,6 +2501,7 @@ function taskSheet(id){return()=>{
       <button type="button" class="frow" data-act="time:add" data-id="${id}" style="width:100%"><label style="min-width:0;flex:1;color:var(--tint)">Add time</label><span class="val">${t.actual?fmtDur(t.actual)+' logged':''}</span>${I.chevR.replace('<svg','<svg class="chevr"')}</button>
       ${t.done?'':`<button type="button" class="frow" data-act="timer:toggle" data-id="${id}" style="width:100%"><label style="min-width:0;flex:1;color:${t.timerStart?'var(--red)':'var(--tint)'}">${t.timerStart?'Stop timer':'Start timer'}</label>${t.timerStart?`<span class="val trun tabular" data-start="${t.timerStart}">${fmtClock((Date.now()-t.timerStart)/1000)}</span>`:''}</button>`}
     </div>
+    ${t.done?'':`<div class="card" style="margin-top:14px"><button type="button" class="frow" data-act="snooze:open" data-id="${id}" style="width:100%"><label style="min-width:0;flex:1;color:var(--tint)">Snooze</label><span class="val">${isSnoozed(t)?'until '+esc(fmtDay(t.snooze)):''}</span>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>`}
     <div class="card" style="margin-top:14px"><button type="button" class="frow" data-act="task:delete" data-id="${id}" style="width:100%;justify-content:center;color:var(--red);font-weight:500">Delete to do</button></div>
   </form></div>`;
 }}
@@ -2531,6 +2628,7 @@ function weekReviewSheet(){return()=>{const ws=weekStartOf(ui.date);const s=week
   const stat=(n,l)=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`;
   return`${snav('Week review',{act:'sheet:close',label:'Close'})}<div class="sbody"><div class="fnote" style="padding:0 0 10px">${w0.getDate()} ${MN[w0.getMonth()]} – ${we.getDate()} ${MN[we.getMonth()]}</div>
     <div class="card"><div class="stats">${stat(s.done,'done')}${stat(s.total-s.done,'open')}${stat(fmtDur(s.focus),'in blocks')}${stat(s.actual?fmtDur(s.actual):'–','logged')}${stat(s.planned?fmtDur(s.planned):'–','estimated')}${stat(`${s.objDone}/${s.objTotal}`,'objectives')}</div></div>
+    ${reviewExtras(ws)}
     ${objectivesHtml(ui.date)}
     ${objectiveReview(ws)}
     <div class="card" style="margin-top:14px"><button class="frow" data-act="ts:open" style="width:100%"><label style="min-width:0;flex:1;color:var(--tint)">Open the timesheet</label>${I.chevR.replace('<svg','<svg class="chevr"')}</button></div>
@@ -2567,7 +2665,7 @@ function handleExtra(act,el,e){
     case'ritual:auto':{if(!R.applied)applyPlanRitual();R.boxed=autoTimebox(R.date);haptic(10);renderApp();drawSheet();break}
     case'ritual:finish':{const k=R.kind;if(k==='plan'){if(!R.applied)applyPlanRitual();else setDay(R.date,{objective:R.obj.trim(),planned:true});toast('Day planned')}else{finishShutdown();toast('Day closed. See you tomorrow')}R=null;closeAllSheets();haptic(12);renderApp();
       setTimeout(()=>burst(innerWidth/2,innerHeight*.42,k==='plan'?'#FF9F0A':'#5E5CE6'),60);break}
-    default:if(!handleView(act,el)&&!handleLive(act,el)&&!handleSel(act,el)&&!handleR3(act,el)&&!handlePush(act))handleMore(act,el,e);
+    default:if(!handleView(act,el)&&!handleLive(act,el)&&!handleSel(act,el)&&!handleR3(act,el)&&!handlePush(act)&&!handleV15(act,el,e)&&!handleV15b(act,el)&&!handleV15c(act,el)&&!handleV15d(act,el))handleMore(act,el,e);
   }
 }
 document.addEventListener('input',e=>{const el=e.target;if(!R)return;if(el.dataset.act==='ritual:obj')R.obj=el.value;if(el.dataset.act==='ritual:refl')R.refl=el.value});
@@ -2889,7 +2987,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches&&e.
 
 /* ---- phone project list sheet ---- */
 ui.projQ='';
-function projectsSheet(){const ps=Object.values(state.projects).sort((a,b)=>a.name.localeCompare(b.name));const q=ui.projQ.trim().toLowerCase();
+function projectsSheet(){const ps=navProjects();const arch=archivedProjects();const q=ui.projQ.trim().toLowerCase();
   const cnt=pidCount;
   const row=(pid,name,icon,color)=>projRow(pid,name,icon,color,cnt(pid));
   const list=ps.filter(p=>!q||p.name.toLowerCase().includes(q));
@@ -2897,28 +2995,34 @@ function projectsSheet(){const ps=Object.values(state.projects).sort((a,b)=>a.na
     <button class="btn sm" data-act="projnames:open" style="margin:0 0 10px">Rename projects and # names</button>
     <div class="sfind" style="margin:0 0 12px"><span style="display:contents">${ico('search',2.2)}</span><input class="projq" placeholder="Find a project" value="${esc(ui.projQ)}" autocomplete="off" aria-label="Find a project" ${ps.length>6?'autofocus':''}></div>
     ${q?'':`<div class="card">${row('all','All to dos','stack',ALLC)}${row('inbox','Inbox','inbox','#0A84FF')}</div><div class="fnote" style="padding-top:14px">Projects ${ps.length?'· '+ps.length:''}</div>`}
-    <div class="card" style="margin-top:6px" id="projlist">${list.map(p=>row(p.id,p.name,p.icon||'tag',p.color)).join('')||`<div class="empty">${q?'No project matches.':'No projects yet. Tap New to add one.'}</div>`}</div></div>`}
+    <div class="card" style="margin-top:6px" id="projlist">${list.map(p=>row(p.id,p.name,p.icon||'tag',p.color)).join('')||`<div class="empty">${q?'No project matches.':'No projects yet. Tap New to add one.'}</div>`}</div>
+    ${!q&&arch.length?`<button class="fnote pbtn" data-act="arch:toggle" style="padding-top:14px">${ui.showArch?'Hide':'Show'} archived · ${arch.length}</button>${ui.showArch?`<div class="card" style="margin-top:6px">${arch.map(p=>row(p.id,p.name,p.icon||'tag',p.color)).join('')}</div>`:''}`:''}
+    <div class="card" style="margin-top:14px"><div class="frow"><label style="min-width:0;flex:1">Names under project icons<small style="display:block;font-size:13px;color:var(--label2)">In the bar at the bottom of the screen</small></label><button class="switch ${bubNames()?'on':''}" data-act="bubnames:toggle" role="switch" aria-checked="${bubNames()}" aria-label="Names under project icons"></button></div></div></div>`}
 document.addEventListener('input',e=>{if(!e.target.matches('.projq'))return;ui.projQ=e.target.value;const q=ui.projQ.trim().toLowerCase();const list=$('#projlist');if(!list)return;
-  const ps=Object.values(state.projects).sort((a,b)=>a.name.localeCompare(b.name)).filter(p=>!q||p.name.toLowerCase().includes(q));const cnt=pid=>tasksArr().filter(t=>!t.done&&t.projectId===pid).length;
+  const ps=[...navProjects(),...archivedProjects()].filter(p=>!q||p.name.toLowerCase().includes(q));const cnt=pid=>tasksArr().filter(t=>!t.done&&t.projectId===pid).length;
   list.innerHTML=ps.map(p=>projRow(p.id,p.name,p.icon||'tag',p.color,cnt(p.id))).join('')||'<div class="empty">No project matches.</div>'});
-function projRow(pid,name,icon,color,n){const cur=ui.pid===pid;return`<div class="prow ${cur?'cur':''}" style="${cvars(color)}"><button class="pick" data-act="projects:pick" data-pid="${pid}"><span class="bic">${ico(icon,2.1)}</span><div class="pt"><div>${esc(name)}</div>${n?`<small>${n} open</small>`:''}</div>${cur?I.checkBig.replace('<svg','<svg style="width:18px;height:18px;color:var(--tint);flex:none"'):''}</button>${pid==='inbox'||pid==='all'?'':`<button class="projedit press" data-act="project:edit" data-id="${pid}" aria-label="Edit ${esc(name)}">···</button>`}</div>`}
+function projRow(pid,name,icon,color,n){ const pp=state.projects[pid];const cur=ui.pid===pid;if(pp&&pp.budget)n=(n?n+' open · ':'')+budgetLabel(pp)+' this week';return`<div class="prow ${cur?'cur':''} ${pp&&pp.archived?'arch':''}" style="${cvars(color)}"><button class="pick" data-act="projects:pick" data-pid="${pid}"><span class="bic">${ico(icon,2.1)}</span><div class="pt"><div>${pp&&pp.pinned?'<span class="pin">'+I.pin+'</span>':''}${esc(name)}</div>${n?`<small>${typeof n==='number'?n+' open':n}</small>`:''}</div>${cur?I.checkBig.replace('<svg','<svg style="width:18px;height:18px;color:var(--tint);flex:none"'):''}</button>${pid==='inbox'||pid==='all'?'':`<button class="projedit press" data-act="project:edit" data-id="${pid}" aria-label="Edit ${esc(name)}">···</button>`}</div>`}
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches&&e.target.matches('.projq')){e.preventDefault();const first=$('#projlist .pick');if(first)handle('projects:pick',first)}});
 
 /* ---- desktop project sidebar ---- */
 ui.projFilter='';
 function projSidebar(pane){
-  const ps=Object.values(state.projects).sort((a,b)=>a.name.localeCompare(b.name));
+  const ps=navProjects();const pins=ps.filter(p=>p.pinned),rest=ps.filter(p=>!p.pinned);const arch=archivedProjects();const cur=currentProject();
   const cnt=pidCount;
   const item=(pid,name,icon,color)=>{const n=cnt(pid);return`<button class="proj ${ui.pid===pid?'on':''}" data-act="proj:select" data-pid="${pid}" ${pid==='all'?'':`data-project="${pid==='inbox'?'':pid}"`} data-name="${esc(name.toLowerCase())}" style="--c:${color}"><span class="pic">${ico(icon,2.2)}</span><span class="pn">${esc(name)}</span><span class="cnt">${n||''}</span></button>`};
-  return`<nav class="sidebar ${pane?'ppane':''}" aria-label="Projects">
+  const pitem=p=>item(p.id,p.name,p.icon||'tag',p.color).replace('class="proj ','class="proj '+(p.archived?'arch ':''));
+  const head=pane?`<button class="pphead" data-act="ppane:toggle" aria-expanded="${!ui.paneMin}">${I.chevR}<span>Projects</span><em>${ui.paneMin?esc(cur?cur.name:ui.pid==='all'?'All to dos':'Inbox'):''}</em></button>`:'';
+  return`<nav class="sidebar ${pane?'ppane':''} ${pane&&ui.paneMin?'min':''}" aria-label="Projects">${head}
     <div class="sfind">${ico('search',2.2)}<input class="projfind" placeholder="Find a project" value="${esc(ui.projFilter)}" autocomplete="off" aria-label="Find a project"></div>
     <div class="plist">${item('all','All to dos','stack',ALLC)}${item('inbox','Inbox','inbox','#0A84FF')}
-      <div class="plabel">Projects <span>${ps.length||''}</span></div>
-      ${ps.map(p=>item(p.id,p.name,p.icon||'tag',p.color)).join('')||'<div class="pnone">No projects yet.</div>'}
+      ${pins.length?`<div class="plabel">Pinned <span>${pins.length}</span></div>${pins.map(pitem).join('')}`:''}
+      <div class="plabel">${pins.length?'Other projects':'Projects'} <span>${rest.length||''}</span></div>
+      ${rest.map(pitem).join('')||(pins.length?'':'<div class="pnone">No projects yet.</div>')}
+      ${arch.length?`<button class="plabel pbtn" data-act="arch:toggle">${ui.showArch?'Hide':'Show'} archived <span>${arch.length}</span></button>${ui.showArch?arch.map(pitem).join(''):''}`:''}
       <div class="pnone" id="pnomatch" hidden>No project matches.</div></div>
     <div class="sfoot"><button class="sbtn press" data-act="project:new">${I.plus}<span>New project</span></button><button class="sbtn icon press" data-act="cmd:open" aria-label="Search">${ico('search',2.2)}</button><button class="sbtn icon press" data-act="settings:open" aria-label="Settings" style="position:relative">${I.gear}${secrets.token&&sync.gistId?`<span class="syncdot ${dbStatus} gdot"></span>`:''}</button></div></nav>`}
 function panelTitle(){const p=currentProject();const every=ui.pid==='all';const n=pidCount(p?p.id:every?'all':'inbox');
-  return`<div class="ptitle" style="--c:${p?p.color:every?ALLC:'#0A84FF'}"><span class="pic">${ico(p?(p.icon||'tag'):every?'stack':'inbox',2.2)}</span><h1>${esc(p?p.name:every?'All to dos':'Inbox')}</h1><span class="cnt">${n||''}</span>${p?`<button class="more press" data-act="project:edit" data-id="${p.id}" aria-label="Edit project">Edit</button>`:''}</div>`}
+  return`<div class="ptitle" style="--c:${p?p.color:every?ALLC:'#0A84FF'}"><span class="pic">${ico(p?(p.icon||'tag'):every?'stack':'inbox',2.2)}</span><h1>${esc(p?p.name:every?'All to dos':'Inbox')}</h1><span class="cnt">${n||''}</span>${p&&p.archived?'<span class="archtag">Archived</span>':''}${p?`<button class="more press" data-act="project:edit" data-id="${p.id}" aria-label="Edit project">Edit</button>`:''}</div>`}
 function filterSidebar(){const q=ui.projFilter.trim().toLowerCase();let shown=0;
   $$('.plist .proj[data-project]:not([data-pid="inbox"])').forEach(b=>{const hit=!q||b.dataset.name.includes(q);b.hidden=!hit;if(hit)shown++});
   const nm=$('#pnomatch');if(nm)nm.hidden=!q||shown>0}
@@ -2942,7 +3046,7 @@ function monthHtml(){const dates=monthDates();const m=fromYmd(ui.date).getMonth(
   const cell=d=>{const dd=fromYmd(d);const items=[...extOn(d).filter(x=>x.allDay).map(x=>({t:x.title,c:x.color,ext:1})),...blocksOn(d).map(b=>({t:b.title,c:colorOf(b.projectId),s:b.start,id:b.id})),...extOn(d).filter(x=>!x.allDay).map(x=>({t:x.title,c:x.color,s:x.start,ext:1}))].sort((a,b)=>(a.s??-1)-(b.s??-1));
     const due=tasksForDay(d).filter(x=>!x.done).length;const shown=items.slice(0,max);const more=items.length-shown.length;
     return`<button class="mday ${dd.getMonth()!==m?'out':''} ${d===t?'today':''} ${d<t?'past':''}" data-act="view:day" data-date="${d}" data-day="${d}" aria-label="${esc(fmtLong(d))}${items.length?', '+items.length+' on the calendar':''}${due?', '+due+' to do'+(due===1?'':'s'):''}">
-      <span class="mnum">${dd.getDate()}</span>${due?`<span class="mdue">${due}</span>`:''}
+      <span class="mnum">${dd.getDate()}</span>${due?`<span class="mdue">${due}</span>`:''}${monthBar(d)}
       <span class="mitems">${shown.map(x=>`<i class="mchip ${x.ext?'ext':''}" ${x.id?`data-mblock="${x.id}" data-title="${esc(x.t)}"`:''} style="--c:${x.c}">${wide?`${x.s!=null?`<em>${fmtTimeShort(x.s)}</em> `:''}${esc(x.t)}`:''}</i>`).join('')}${more>0?`<span class="mmore">+${more}</span>`:''}</span></button>`};
   return`<div class="mgrid ${ui.dayAnim}" style="--rows:${dates.length/7}"><div class="mhead">${heads.map(h=>`<span>${h}</span>`).join('')}</div><div class="mbody">${dates.map(cell).join('')}</div></div>`}
 function handleView(act,el){
@@ -3153,7 +3257,7 @@ function drawSelBar(){let bar=$('#selbar');if(!ui.selecting){if(bar)bar.remove()
   if(!bar){bar=document.createElement('div');bar.id='selbar';bar.setAttribute('role','toolbar');document.body.appendChild(bar)}
   const n=selCount(),nb=ui.sel.blocks.size,nt=ui.sel.tasks.size;
   bar.innerHTML=`<span class="sc">${n?`${n} selected`:'Tap to select'}</span>
-    ${nt?`<button data-act="sel:done">Done</button>`:''}<button data-act="sel:day" ${n?'':'disabled'}>Day…</button>${nb?`<button data-act="sel:shift">Time…</button>`:''}<button data-act="sel:proj" ${n?'':'disabled'}>Project…</button><button class="danger" data-act="sel:delete" ${n?'':'disabled'}>Delete</button><button class="x" data-act="sel:end" aria-label="Stop selecting">×</button>`}
+    ${nt?`<button data-act="sel:done">Done</button>`:''}<button data-act="sel:day" ${n?'':'disabled'}>Day…</button>${nb?`<button data-act="sel:shift">Time…</button>`:''}<button data-act="sel:proj" ${n?'':'disabled'}>Project…</button>${nt?`<button data-act="sel:snooze">Snooze…</button>`:''}<button class="danger" data-act="sel:delete" ${n?'':'disabled'}>Delete</button><button class="x" data-act="sel:end" aria-label="Stop selecting">×</button>`}
 function selDaySheet(){return()=>{const t=todayYmd();const nextMon=(()=>{let d=addDays(fromYmd(t),1);while(d.getDay()!==1)d=addDays(d,1);return ymd(d)})();
   const row=(d,l,sub)=>`<button class="pick" data-act="sel:dayPick" data-date="${d}"><span class="bic" style="background:var(--tint)">${ico('calendar',2)}</span><div class="pt"><div>${l}</div>${sub?`<small>${sub}</small>`:''}</div></button>`;
   return`${snav('Move to day',{act:'sheet:close',label:'Cancel'})}<div class="sbody"><div class="card">${row(t,'Today')}${row(shiftYmd(t,1),'Tomorrow')}${row(nextMon,'Next Monday',fmtDay(nextMon))}${row(shiftYmd(t,7),'In a week',fmtDay(shiftYmd(t,7)))}
@@ -3314,7 +3418,7 @@ function pushCard(){const s=state.settings;const mine=pushMine();const subs=Obje
 function handlePush(act){switch(act){case'push:on':pushOn();return true;case'push:off':pushOff();return true;case'push:test':pushTest();return true;case'push:timer':state.settings.pushTimer=state.settings.pushTimer===false;saveSettings();refreshSheet();return true}return false}
 
 /* ---- version & updates ---- */
-const APP_VERSION='1.14.2';
+const APP_VERSION='1.15.0';
 const UPD={latest:null,notes:'',checking:false,at:0,err:'',hidden:''};
 const newerThan=(a,b)=>{if(!a)return false;const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
 const hasUpdate=()=>newerThan(UPD.latest,APP_VERSION);
@@ -3353,6 +3457,217 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-act^="upd:
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-UPD.at>5*60000)checkUpdate(false)});
   window.addEventListener('online',()=>checkUpdate(false));
 })();
+
+/* ============ v1.15: projects you can pin, archive, budget and annotate ============ */
+const byName=(a,b)=>a.name.localeCompare(b.name);
+/* the projects shown in lists: pinned first, archived ones tucked away */
+const navProjects=()=>Object.values(state.projects).filter(p=>!p.archived).sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||byName(a,b));
+const archivedProjects=()=>Object.values(state.projects).filter(p=>p.archived).sort(byName);
+ui.showArch=false;
+/* minutes tracked on a project this week (blocks that have happened, timers included) */
+function projWeekMins(pid){const ws=weekStartOf(todayYmd());const days=Array.from({length:7},(_,k)=>shiftYmd(ws,k));return tsBlocks(days).filter(r=>r.b.projectId===pid).reduce((s,r)=>s+r.mins,0)}
+function projPlannedMins(pid){const ws=weekStartOf(todayYmd());const days=Array.from({length:7},(_,k)=>shiftYmd(ws,k));return Object.values(state.blocks).filter(b=>b.projectId===pid&&days.includes(b.date)).reduce((s,b)=>s+b.duration,0)}
+function budgetBar(p){if(!p||!p.budget)return'';const goal=p.budget*60;const done=projWeekMins(p.id);const plan=projPlannedMins(p.id);const pct=Math.min(100,Math.round(done/goal*100));const ppct=Math.min(100,Math.round(plan/goal*100));
+  return`<div class="budget" title="${fmtDur(plan)} planned this week"><div class="bt"><span>This week</span><b>${fmtDur(done)||'0m'} of ${fmtDur(goal)}</b></div><div class="bbar"><i class="plan" style="width:${ppct}%"></i><i style="width:${pct}%"></i></div></div>`}
+const budgetLabel=p=>p&&p.budget?`${fmtDur(projWeekMins(p.id))||'0m'}/${p.budget}h`:'';
+/* notes: plain text, links clickable */
+const linkify=s=>esc(s).replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/\n/g,'<br>');
+function notesCard(p){if(!p||!p.notes)return'';return`<div class="pnotes ${ui.notesOpen?'open':''}"><button class="pnh" data-act="pnotes:toggle">${ico('pencil',2.2)}<span>Notes</span>${ui.notesOpen?'':`<em>${esc(p.notes.split('\n')[0].slice(0,60))}</em>`}</button>${ui.notesOpen?`<div class="pnb">${linkify(p.notes)}</div><button class="pne" data-act="project:edit" data-id="${p.id}">Edit</button>`:''}</div>`}
+try{ui.notesOpen=localStorage.getItem(LS_KEY+':notes')==='1'}catch(e){}
+
+/* project sheet: pin, weekly budget, notes, archive */
+function projectSheet(id){const fresh=pickProjectColor(),freshIcon=pickProjectIcon();return()=>{
+  const p=id?state.projects[id]:null;
+  const color=p?p.color:fresh;const icon=p?(p.icon||'tag'):freshIcon;const bud=p&&p.budget||0;
+  return`${snav(p?'Edit Project':'New Project',{act:'sheet:close',label:'Cancel'},{act:'noop',label:p?'Save':'Add',form:'projForm'})}
+  <div class="sbody"><form id="projForm" data-act="project:save" data-id="${id||''}" data-fresh-icon="${freshIcon}">
+    <div class="card"><div class="frow big"><input name="name" value="${p?esc(p.name):''}" placeholder="Project name" required ${p?'':'autofocus'} autocomplete="off" aria-label="Name"></div></div>
+    <div class="card" style="margin-top:14px"><div class="frow"><label style="min-width:0;flex:1">Pin to top<small style="display:block;font-size:13px;color:var(--label2)">Pinned projects come first everywhere</small></label><button type="button" class="switch ${p&&p.pinned?'on':''}" data-act="formsw" role="switch" aria-checked="${!!(p&&p.pinned)}" aria-label="Pin to top"></button><input type="hidden" name="pinned" value="${p&&p.pinned?'1':''}"></div>
+      <div class="frow"><label style="min-width:0;flex:1">Weekly budget<small style="display:block;font-size:13px;color:var(--label2)">Hours you mean to spend each week${p&&p.budget?' · '+fmtDur(projWeekMins(p.id))+' so far':''}</small></label><select name="budget">${[0,1,2,3,4,5,6,8,10,12,15,20,25,30,35,40].map(h=>`<option value="${h}" ${bud===h?'selected':''}>${h?h+' h':'None'}</option>`).join('')}</select></div></div>
+    <div class="fnote" style="padding-top:14px">Notes</div><div class="card" style="margin-top:6px"><div class="frow" style="display:block"><textarea name="notes" rows="4" placeholder="Addresses, contacts, links…" style="width:100%;min-height:90px;resize:vertical">${p?esc(p.notes||''):''}</textarea></div></div>
+    <div class="fnote" style="padding-top:14px">Colour</div><div class="card" style="margin-top:6px"><div class="swatches">${PALETTE.map(c=>`<button type="button" class="swatch ${color===c?'on':''}" style="background:${c};${cvars(c)}" data-act="chip:set" data-name="color" data-value="${c}" aria-label="Colour"></button>`).join('')}</div><input type="hidden" name="color" value="${color}"></div>
+    <div class="fnote" style="padding-top:14px">Icon</div><div class="card" style="margin-top:6px">${iconGrid(icon,color,'icon',false)}</div>
+    ${p?`<div class="card" style="margin-top:14px"><button type="button" class="frow" data-act="project:archive" data-id="${p.id}" style="width:100%;justify-content:center;color:var(--tint);font-weight:500">${p.archived?'Bring back from archive':'Archive project'}</button><button type="button" class="frow" data-act="project:delete" data-id="${p.id}" style="width:100%;justify-content:center;color:var(--red);font-weight:500">Delete project</button></div>
+    <div class="fnote">Archiving hides a finished project from your lists. Its to dos, blocks and timesheet stay.</div>`:''}
+  </form></div>`;
+}}
+function saveProjectForm(f){const d=readForm(f);const id=f.dataset.id;const name=(d.name||'').trim();if(!name)return null;
+  const extra={pinned:!!d.pinned,budget:+d.budget||0,notes:(d.notes||'').trim()};
+  if(id){put('projects',id,{...state.projects[id],name,color:d.color,icon:d.icon||'tag',...extra});return id}
+  const nid=uid('p');put('projects',nid,{id:nid,name,color:d.color,icon:d.icon||'tag',createdAt:Date.now(),...extra});return nid}
+function archiveProject(id){const p=state.projects[id];if(!p)return;const was=!!p.archived;put('projects',id,{...p,archived:!was,pinned:was?p.pinned:false});
+  if(!was&&ui.pid===id){ui.pid='inbox';saveUi()}closeAllSheets();ui.listAnim=true;renderApp();
+  toast(was?`“${p.name}” is back`:`Archived “${p.name}”`,{label:'Undo',fn:()=>{put('projects',id,{...state.projects[id],archived:was,pinned:p.pinned});renderApp()}})}
+
+/* phone: names under the project bubbles */
+const bubNames=()=>state.settings.bubNames!==false;
+
+/* desktop: drag the panel's edge to make it wider or narrower */
+const PW_KEY=()=>LS_KEY+':panelw'+(ui.mode==='week'?':week':'');
+function applyPanelWidth(){const h=document.documentElement.style;let w=null;try{w=+localStorage.getItem(LS_KEY+':panelw')||null}catch(e){}if(w)h.setProperty('--panel',`min(${w}px,60vw)`);else h.removeProperty('--panel');
+  let ww=null;try{ww=+localStorage.getItem(LS_KEY+':panelw:week')||null}catch(e){}if(ww)h.setProperty('--panelweek',`min(${ww}px,72vw)`);else h.removeProperty('--panelweek')}
+applyPanelWidth();
+document.addEventListener('pointerdown',e=>{const g=e.target.closest&&e.target.closest('.pgrip');if(!g)return;e.preventDefault();e.stopPropagation();
+  const panel=g.closest('.panel');const left=panel.getBoundingClientRect().left;const week=ui.mode==='week';let w=panel.getBoundingClientRect().width;g.classList.add('on');document.body.classList.add('resizing');
+  const mv=ev=>{w=Math.max(260,Math.min(window.innerWidth*(week?.72:.6),ev.clientX-left));document.documentElement.style.setProperty(week?'--panelweek':'--panel',w+'px')};
+  const up=()=>{window.removeEventListener('pointermove',mv);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);g.classList.remove('on');document.body.classList.remove('resizing');
+    try{localStorage.setItem(PW_KEY(),Math.round(w))}catch(err){}applyPanelWidth();renderApp()};
+  window.addEventListener('pointermove',mv);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up)},true);
+document.addEventListener('dblclick',e=>{if(!(e.target.closest&&e.target.closest('.pgrip')))return;try{localStorage.removeItem(PW_KEY())}catch(err){}applyPanelWidth();renderApp();toast('Panel width reset')});
+
+/* the project pane in smaller computer windows can fold down to one line */
+try{ui.paneMin=localStorage.getItem(LS_KEY+':panemin')==='1'}catch(e){}
+
+/* each project remembers where its list was scrolled to */
+ui.scrollPos={};
+
+function handleV15(act,el,e){const id=el&&el.dataset.id;
+  switch(act){
+    case'formsw':{const on=!el.classList.contains('on');el.classList.toggle('on',on);el.setAttribute('aria-checked',on);const i=el.parentNode.querySelector('input[type=hidden]');if(i)i.value=on?'1':'';haptic(5);return true}
+    case'project:archive':archiveProject(id);return true;
+    case'arch:toggle':ui.showArch=!ui.showArch;if($('#overlay .sheet'))refreshSheet();renderApp();return true;
+    case'pnotes:toggle':ui.notesOpen=!ui.notesOpen;try{localStorage.setItem(LS_KEY+':notes',ui.notesOpen?'1':'0')}catch(err){}renderApp();return true;
+    case'bubnames:toggle':state.settings.bubNames=!bubNames();saveSettings();refreshSheet();renderApp();return true;
+    case'ppane:toggle':ui.paneMin=!ui.paneMin;try{localStorage.setItem(LS_KEY+':panemin',ui.paneMin?'1':'0')}catch(err){}renderApp();return true;
+  }return false}
+
+/* ---- v1.15: snooze, All grouping, first run, density ---- */
+/* a snoozed to do stays out of sight until its day comes round */
+ui.showSnoozed=false;
+try{ui.allSort=localStorage.getItem(LS_KEY+':allsort')||'project'}catch(e){ui.allSort='project'}
+function snoozeDates(){const t=todayYmd();const d=fromYmd(t);const wd=d.getDay();
+  const sat=shiftYmd(t,wd===6?7:(6-wd+7)%7||7);const mon=shiftYmd(t,((8-wd)%7)||7);const month=ymd(new Date(d.getFullYear(),d.getMonth()+1,d.getDate()));
+  return[[shiftYmd(t,1),'Tomorrow'],[sat,wd===6||wd===0?'Next weekend':'This weekend'],[mon,'Next week'],[month,'In a month']]}
+function snoozeSheet(ids){return()=>{const one=ids.length===1&&state.tasks[ids[0]];
+  const row=(d,l)=>`<button class="pick" data-act="snooze:pick" data-date="${d}"><span class="bic" style="background:#5E5CE6">${ico('moon',2)}</span><div class="pt"><div>${l}</div><small>${esc(fmtDay(d))}, ${WD[fromYmd(d).getDay()]}</small></div></button>`;
+  return`${snav(one?'Snooze':'Snooze '+ids.length,{act:'sheet:close',label:'Cancel'})}<div class="sbody"><div class="fnote" style="padding:0 0 10px">${one?esc(one.title)+' disappears':'They disappear'} from your lists until the day you pick, then ${one?'comes':'come'} back planned for that day.</div>
+    <div class="card">${snoozeDates().map(([d,l])=>row(d,l)).join('')}</div>
+    <div class="card" style="margin-top:14px"><div class="frow"><label>Pick a day</label><input type="date" class="snDate" value="${shiftYmd(todayYmd(),2)}" min="${shiftYmd(todayYmd(),1)}"></div><button class="frow" data-act="snooze:pickInput" style="width:100%;justify-content:center;color:var(--tint);font-weight:600">Snooze</button></div>
+    ${one&&isSnoozed(one)?`<div class="card" style="margin-top:14px"><button class="frow" data-act="snooze:wake" style="width:100%;justify-content:center;color:var(--tint);font-weight:500">Bring back now</button></div>`:''}</div>`}}
+let snoozeIds=[];
+function snoozeTasks(ids,d){const snap=snapshotState();ids.forEach(id=>{const t=state.tasks[id];if(!t)return;if(t.blockId)moveTask(id,null);put('tasks',id,{...state.tasks[id],snooze:d,due:d,blockId:null,dueTime:null})});
+  renderApp();toast(`Snoozed ${ids.length===1?'“'+state.tasks[ids[0]].title+'”':ids.length+' to dos'} until ${fmtDay(d)}`,{label:'Undo',fn:()=>restoreSnapshot(snap)})}
+
+/* first run: three steps to get going, gone once they're done or dismissed */
+function welcomeCard(){if(state.settings.onboarded)return'';const st=[
+    [!!(secrets.token&&sync.gistId),'Turn on sync','So your phone and computer share one plan','sync:open'],
+    [Object.keys(state.projects).length>0,'Add a project','Work, home, a client… each gets a colour','project:new'],
+    [allTasks().length>0,'Add a to do','Type it like “Call Mike tomorrow 30m #Atria”','todo:new'],
+    [allTasks().some(t=>t.blockId)||Object.keys(state.blocks).length>0,'Put a to do on the calendar','Hold it, then drag it to a time','']];
+  if(st.every(x=>x[0]))return'';
+  return`<div class="welcome"><div class="wh"><b>Welcome to Port</b><button class="x" data-act="welcome:done" aria-label="Dismiss">×</button></div>
+    ${st.map(([ok,t,sub,act],k)=>`<${act&&!ok?`button data-act="${act}"`:'div'} class="wstep ${ok?'ok':''}"><span class="wn">${ok?I.check:k+1}</span><div><div>${t}</div><small>${sub}</small></div></${act&&!ok?'button':'div'}>`).join('')}</div>`}
+function emptyText(p,every,nSnoozed,nDone){
+  const lead=p?`Nothing open in ${esc(p.name)}.`:every?'No open to dos anywhere.':'Your inbox is clear.';
+  const extra=nSnoozed?` ${nSnoozed} snoozed for later.`:nDone?' Nice work.':'';
+  return`<b>${lead}</b>${extra} Add one below${isWide()?', then drag it onto the calendar':', then hold it and carry it onto the calendar'}.`}
+
+/* density */
+function applyDensity(){document.documentElement.classList.toggle('dense',state.settings.density==='compact')}
+
+function handleV15b(act,el){const id=el&&el.dataset.id;
+  switch(act){
+    case'allsort':ui.allSort=el.dataset.v;try{localStorage.setItem(LS_KEY+':allsort',ui.allSort)}catch(e){}ui.listAnim=true;renderApp();return true;
+    case'snoozed:toggle':ui.showSnoozed=!ui.showSnoozed;renderApp();return true;
+    case'snooze:open':{const f=el.closest('form');if(f&&f.id==='taskForm')saveTaskForm(f);snoozeIds=[id];closeAllSheets();openSheet(snoozeSheet(snoozeIds));return true}
+    case'sel:snooze':snoozeIds=[...ui.sel.tasks];if(!snoozeIds.length)return true;openSheet(snoozeSheet(snoozeIds));return true;
+    case'snooze:pickInput':{const v=$('.snDate')&&$('.snDate').value;if(!v||v<=todayYmd()){toast('Pick a day after today');return true}el.dataset.date=v}
+    /* falls through */
+    case'snooze:pick':{const d=el.dataset.date;const ids=snoozeIds;closeAllSheets();if(ui.selecting)endSelect();snoozeTasks(ids,d);return true}
+    case'snooze:wake':{const ids=snoozeIds;closeAllSheets();ids.forEach(x=>{const t=state.tasks[x];if(t)put('tasks',x,{...t,snooze:null,due:null})});renderApp();toast('Back in your list');return true}
+    case'welcome:done':state.settings.onboarded=true;saveSettings();renderApp();return true;
+  }return false}
+
+/* ---- v1.15: calendar and timer ---- */
+/* overlapping blocks: push the later ones along until nothing overlaps (anchored blocks stay put) */
+function pushOverlaps(date){const bl=blocksOn(date);let end=-1;let n=0;const buf=P().buffer||0;
+  for(const x of bl){if(x.live){end=Math.max(end,liveEndMin?liveEndMin(x):blockEnd(x));continue}
+    if(end>x.start&&movable(x)){const ns=pastAnchors(date,Math.min(1440-x.duration,end+buf),x.duration,x.id);if(ns!==x.start){put('blocks',x.id,{...x,start:ns});n++}end=Math.max(end,ns+x.duration)}
+    else end=Math.max(end,blockEnd(x))}
+  return n}
+function clashCard(b){const others=blocksOn(b.date).filter(x=>x.id!==b.id&&x.start<blockEnd(b)&&b.start<blockEnd(x));if(!others.length)return'';
+  return`<div class="clashcard"><div><b>Overlaps ${others.length===1?'“'+esc(others[0].title)+'”':others.length+' blocks'}</b><small>${others.map(x=>fmtTimeShort(x.start)+'–'+fmtTimeShort(blockEnd(x))).join(', ')}</small></div><button class="btn sm" data-act="clash:fix" data-date="${b.date}">Push the later one</button></div>`}
+
+/* drag a project from the list onto the calendar to block out time for it */
+function startPDrag(e){const p=G.pending;const pr=state.projects[p.id];if(!pr){G.pending=null;return}G.mode='pdrag';
+  const g=document.createElement('div');g.className='pghost';g.style.setProperty('--c',pr.color);g.innerHTML=`<span class="pic">${ico(pr.icon||'tag',2.2)}</span>${esc(pr.name)}`;document.body.appendChild(g);p.ghost=g;p.el.classList.add('dragging');movePDrag(e)}
+function movePDrag(e){const p=G.pending;if(!p||!p.ghost)return;p.ghost.style.transform=`translate3d(${e.clientX+12}px,${e.clientY+10}px,0)`;
+  const under=document.elementFromPoint(e.clientX,e.clientY);const col=under&&under.closest('.daycol');
+  if(!col){if(p.prev){p.prev.remove();p.prev=null}p.slot=null;return}
+  const pr=state.projects[p.id];const start=Math.min(1380,slotTime(col,e.clientY-hourPx()/4));const hs=state.settings.dayStart*60;const hh=hourPx();
+  if(!p.prev){p.prev=document.createElement('div');p.prev.className='block preview';p.prev.style.setProperty('--c',pr.color);p.prev.innerHTML=`<div class="bh"><span class="bt">${esc(pr.name)}</span></div><div class="bm"></div>`}
+  if(p.prev.parentNode!==col)col.appendChild(p.prev);p.prev.style.cssText+=`;top:${(start-hs)/60*hh}px;height:${hh-4}px;left:4px;right:4px;--c:${pr.color}`;p.prev.querySelector('.bm').textContent=fmtTimeShort(start)+'–'+fmtTimeShort(start+60);
+  p.slot={date:col.dataset.date,start}}
+function endPDrag(cancelled){const p=G.pending;if(!p)return;if(p.ghost)p.ghost.remove();if(p.prev)p.prev.remove();p.el.classList.remove('dragging');G.suppressClick=true;setTimeout(()=>G.suppressClick=false,300);
+  if(cancelled||!p.slot)return;const pr=state.projects[p.id];const id=createBlock({title:pr.name,date:p.slot.date,start:p.slot.start,duration:60,projectId:pr.id});haptic(10);renderApp();
+  toast(`Added an hour for ${pr.name} at ${fmtTimeShort(p.slot.start)}`,{label:'Edit',fn:()=>openSheet(blockEditor({id}))})}
+
+/* a notification with Pause and Stop while the timer runs (where the device allows it) */
+const timerNoteOn=()=>state.settings.timerNote!==false&&typeof Notification!=='undefined'&&Notification.permission==='granted'&&'serviceWorker'in navigator;
+async function timerNote(){try{if(!('serviceWorker'in navigator))return;const reg=await navigator.serviceWorker.getRegistration();if(!reg)return;const b=liveBlock();
+  if(!b||!timerNoteOn()){(await reg.getNotifications({tag:'port-timer'})).forEach(n=>n.close());return}
+  const p=b.projectId&&state.projects[b.projectId];const what=b.untitled?'Timer':b.title;
+  await reg.showNotification(b.paused?'Paused: '+what:what,{tag:'port-timer',renotify:false,silent:true,requireInteraction:true,icon:'icons/icon-192.png',badge:'icons/icon-192.png',
+    body:`${p?p.name+' · ':''}${b.paused?'Paused':'Started '+fmtTimeShort(b.start)}`,timestamp:b.liveStart,data:{url:'./',timer:true},
+    actions:b.paused?[{action:'timer-resume',title:'Resume'},{action:'timer-stop',title:'Stop'}]:[{action:'timer-pause',title:'Pause'},{action:'timer-stop',title:'Stop'}]})}catch(e){}}
+var timerNoteKey='';
+function syncTimerNote(){const b=liveBlock();const k=b?b.id+':'+(b.paused?'p':'r')+':'+b.title+':'+(b.projectId||''):'';if(k===timerNoteKey)return;timerNoteKey=k;timerNote()}
+function timerAction(a){if(a==='timer-pause')pauseLive();else if(a==='timer-resume')resumeLive();else if(a==='timer-stop')stopLive();syncTimerNote()}
+if('serviceWorker'in navigator)navigator.serviceWorker.addEventListener('message',e=>{const d=e.data||{};if(d.type==='timer')timerAction(d.action)});
+(()=>{const q=new URLSearchParams(location.search);const a=q.get('timer');if(a){q.delete('timer');history.replaceState(null,'',location.pathname+(q.toString()?'?'+q:'')+location.hash);setTimeout(()=>timerAction(a),600)}})();
+
+/* month: a thin bar per day showing how the time splits across projects */
+function monthBar(d){const bl=blocksOn(d);if(!bl.length)return'';const by=new Map();bl.forEach(b=>{const c=colorOf(b.projectId);by.set(c,(by.get(c)||0)+b.duration)});
+  return`<span class="mbar" aria-hidden="true">${[...by.entries()].sort((a,b)=>b[1]-a[1]).map(([c,m])=>`<i style="flex:${m};background:${c}"></i>`).join('')}</span>`}
+
+function handleV15c(act,el){
+  switch(act){
+    case'clash:fix':{const snap=snapshotState();const n=pushOverlaps(el.dataset.date);closeAllSheets();renderApp();toast(n?`Moved ${n} block${n===1?'':'s'} so nothing overlaps`:'Couldn’t move them: anchored blocks are in the way',n?{label:'Undo',fn:()=>restoreSnapshot(snap)}:undefined);return true}
+    case'timernote:toggle':state.settings.timerNote=state.settings.timerNote===false;saveSettings();timerNoteKey='~';syncTimerNote();refreshSheet();if(state.settings.timerNote!==false&&typeof Notification!=='undefined'&&Notification.permission==='default')Notification.requestPermission().then(()=>{timerNoteKey='~';syncTimerNote();refreshSheet()});return true;
+  }return false}
+
+/* ---- v1.15: sync you can trust, week review extras, shortcuts, accent colour ---- */
+/* remember when this device last synced, across reloads */
+try{const v=+localStorage.getItem(LS_KEY+':lastsync');if(v&&!sync.lastAt)sync.lastAt=v}catch(e){}
+function noteSynced(){try{localStorage.setItem(LS_KEY+':lastsync',String(sync.lastAt))}catch(e){}}
+function agoLong(t){if(!t)return'never';const s=(Date.now()-t)/1000;if(s<86400)return ago(t);const d=Math.round(s/86400);return d===1?'yesterday':d+' days ago'}
+function staleSyncBanner(){if(!(secrets.token&&sync.gistId)||!sync.lastAt||Date.now()-sync.lastAt<24*3600000)return'';
+  return`<div class="banner stale"><span class="bic">${ico('bolt',2)}</span><button class="bt" data-act="sync:open"><b>Last synced ${esc(agoLong(sync.lastAt))}</b><small>${dbStatus==='offline'?'This device is offline. ':dbStatus==='error'?'There’s a sync problem. ':''}Changes here may not be on your other devices yet</small></button><button class="btn sm" data-act="sync:now">Sync now</button></div>`}
+
+/* week review: time by project, and what didn't get done */
+function reviewExtras(ws){const days=Array.from({length:7},(_,k)=>shiftYmd(ws,k));const rows=tsBlocks(days);const by=new Map();
+  rows.forEach(r=>{const k=r.b.projectId&&state.projects[r.b.projectId]?r.b.projectId:'';by.set(k,(by.get(k)||0)+r.mins)});
+  const tot=[...by.values()].reduce((a,b)=>a+b,0);const list=[...by.entries()].sort((a,b)=>b[1]-a[1]);
+  const td=todayYmd();const open=tasksArr().filter(t=>!t.done&&days.includes(taskDay(t))&&taskDay(t)<td&&!isSnoozed(t));const next=shiftYmd(ws,7)>td?shiftYmd(ws,7):td;
+  return`${list.length?`<div class="fnote" style="padding-top:14px">Time by project · ${fmtDur(tot)}</div><div class="card" style="margin-top:6px">${list.map(([k,m])=>{const p=state.projects[k];const c=p?p.color:'#8E8E93';const goal=p&&p.budget?p.budget*60:0;
+      return`<div class="rrow tbp"><div class="rt"><div><i class="pdot" style="background:${c};margin-right:6px"></i>${esc(p?p.name:'No project')}</div><div class="tbar"><i style="width:${Math.round(m/(goal||tot)*100)>100?100:Math.round(m/(goal||tot)*100)}%;background:${c}"></i></div></div><b style="font-size:14px">${fmtDur(m)}${goal?`<small> / ${p.budget}h</small>`:''}</b></div>`}).join('')}</div>`:''}
+    ${open.length?`<div class="fnote" style="padding-top:14px;display:flex;justify-content:space-between;align-items:center"><span>Didn’t get to · ${open.length}</span></div><div class="card" style="margin-top:6px">${open.slice(0,12).map(t=>`<div class="rrow"><div class="rt"><div>${esc(t.title)}</div><small>${esc(fmtDay(taskDay(t)))}${t.projectId&&state.projects[t.projectId]?' · '+esc(state.projects[t.projectId].name):''}</small></div></div>`).join('')}${open.length>12?`<div class="rrow"><div class="rt"><small>and ${open.length-12} more</small></div></div>`:''}
+      <button class="frow" data-act="review:roll" data-ws="${ws}" style="width:100%;justify-content:center;color:var(--tint);font-weight:600">Move ${open.length===1?'it':'all '+open.length} to ${esc(fmtDay(next))}</button></div>`:''}`}
+
+/* accent colour */
+const ACCENTS=[['#0A84FF','Blue'],['#5E5CE6','Indigo'],['#BF5AF2','Purple'],['#FF375F','Pink'],['#FF453A','Red'],['#FF9F0A','Orange'],['#30D158','Green'],['#64D2FF','Teal']];
+function applyAccent(){const a=state.settings.accent;const r=document.documentElement.style;if(a&&a!=='#0A84FF')r.setProperty('--tint',a);else r.removeProperty('--tint')}
+const accentRow=()=>`<div class="frow" style="display:block"><label>Accent colour</label><div class="accents">${ACCENTS.map(([c,n])=>`<button class="acc ${(state.settings.accent||'#0A84FF')===c?'on':''}" data-act="accent:set" data-v="${c}" style="background:${c}" aria-label="${n}" title="${n}"></button>`).join('')}</div></div>`;
+
+/* more keys: [ ] step through projects, a / i jump to All / Inbox, Shift+1–9 pinned projects, r review, \ fold the project pane */
+document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey||e.repeat)return;if(e.target.matches&&e.target.matches('input,textarea,select,[contenteditable]'))return;if(sheetStack.length||PROV)return;
+  const order=['all','inbox',...navProjects().map(p=>p.id)];const go=fn=>{e.preventDefault();fn()};
+  if(e.shiftKey&&/^Digit[1-9]$/.test(e.code)){const pins=navProjects().filter(p=>p.pinned);const p=pins[+e.code.slice(5)-1];if(p)go(()=>selectProject(p.id));else go(()=>toast('Pin projects to jump to them with Shift + number'));return}
+  switch(e.key){
+    case']':case'[':go(()=>{const i=order.indexOf(ui.pid);const n=order[(i+(e.key===']'?1:-1)+order.length)%order.length];selectProject(n)});break;
+    case'a':go(()=>selectProject('all'));break;
+    case'i':go(()=>selectProject('inbox'));break;
+    case'r':go(()=>openSheet(weekReviewSheet()));break;
+    case'\\':if($('.ppane'))go(()=>handleV15('ppane:toggle'));break;
+  }});
+KEYS.splice(KEYS.length-1,0,['[ ]','Previous / next project'],['a i','All to dos, Inbox'],['⇧1–9','Pinned projects'],['r','Week review'],['\\','Fold the project pane']);
+
+function handleV15d(act,el){
+  switch(act){
+    case'review:roll':{const ws=el.dataset.ws;const days=Array.from({length:7},(_,k)=>shiftYmd(ws,k));const td=todayYmd();const next=shiftYmd(ws,7)>td?shiftYmd(ws,7):td;const snap=snapshotState();const open=tasksArr().filter(t=>!t.done&&days.includes(taskDay(t))&&taskDay(t)<td&&!isSnoozed(t));
+      open.forEach(t=>planTask(t.id,next));refreshSheet();renderApp();toast(`Moved ${open.length} to ${fmtDay(next)}`,{label:'Undo',fn:()=>{restoreSnapshot(snap);refreshSheet()}});return true}
+    case'accent:set':state.settings.accent=el.dataset.v;saveSettings();applyAccent();refreshSheet();renderApp();haptic(5);return true;
+  }return false}
 
 /* ---- init ---- */
 loadLocal();applyTheme();autoArchive();quickAddFromUrl();syncRoutines();renderApp();initDb();setTimeout(autoRollover,2500);setTimeout(()=>refreshCals(false),1500);setInterval(()=>{if(!document.hidden)refreshCals(false)},10*60000);
